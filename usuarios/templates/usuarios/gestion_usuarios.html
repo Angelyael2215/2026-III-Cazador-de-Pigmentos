@@ -1,0 +1,47 @@
+{% extends 'usuarios/base_admin.html' %}
+{% block content %}
+<h2>3. Gestión de Usuarios y sus Permisos Heredados</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Roles Asignados</th>
+            <th>Permisos Efectivos (Heredados del Rol)</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in usuarios %}
+        <tr>
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td>
+                {% for r in u.groups.all %}
+                    <span style="background: #3498db; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;">
+                        {{ r.name }}
+                    </span>
+                {% empty %}
+                    <em style="color: #7f8c8d;">Sin rol (Jugador Básico)</em>
+                {% endfor %}
+            </td>
+            <td>
+                {% for r in u.groups.all %}
+                    {% for p in r.permissions.all %}
+                        <code style="background: #eef2f5; color: #2c3e50; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; display: inline-block; margin: 2px;">
+                            {{ p.codename }}
+                        </code>
+                    {% endfor %}
+                {% empty %}
+                    <span style="color: #95a5a6; font-size: 0.85em;">Sin permisos especiales</span>
+                {% endfor %}
+            </td>
+            <td>
+                <a href="{% url 'asignar_roles_usuario' u.id %}" class="btn btn-edit">Asignar Roles</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

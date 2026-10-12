@@ -1,0 +1,33 @@
+{% extends 'usuarios/base_admin.html' %}
+{% block content %}
+<h2>1. Gestión de Permisos</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">Crear Permiso</button>
+</form>
+
+<hr>
+<h3>Lista de Permisos Registrados</h3>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Código Interno</th>
+            <th>Modelo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in permisos %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.name }}</td>
+            <td><code>{{ p.codename }}</code></td>
+            <td>{{ p.content_type.app_label }} | {{ p.content_type.model }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

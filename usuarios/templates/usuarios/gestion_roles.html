@@ -1,0 +1,41 @@
+{% extends 'usuarios/base_admin.html' %}
+{% block content %}
+<h2>2. Gestión de Roles</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">Crear Rol</button>
+</form>
+
+<hr>
+<h3>Roles Existentes</h3>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Rol</th>
+            <th>Permisos Asignados</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rol in roles %}
+        <tr>
+            <td>{{ rol.id }}</td>
+            <td><strong>{{ rol.name }}</strong></td>
+            <td>
+                {% for p in rol.permissions.all %}
+                    <code>{{ p.codename }}</code>{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    <em>Sin permisos</em>
+                {% endfor %}
+            </td>
+            <td>
+                <a href="{% url 'editar_rol' rol.id %}" class="btn btn-edit">Editar Permisos</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

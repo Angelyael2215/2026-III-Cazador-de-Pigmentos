@@ -2,20 +2,35 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro  Cazadores de Pigmentos</title>
+    <title>Registro - Cazadores de Pigmentos</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #2c3e50; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; box-sizing: border-box; }
+        .contenedor-registro { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 360px; }
+        .contenedor-registro h2 { margin-top: 0; color: #2c3e50; text-align: center; font-size: 1.4em; }
+        .contenedor-registro form p { margin-bottom: 12px; }
+        .contenedor-registro input[type="text"], 
+        .contenedor-registro input[type="email"], 
+        .contenedor-registro input[type="password"] { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .helptext { display: block; font-size: 0.75em; color: #666; margin-top: 3px; }
+        .contenedor-registro button { width: 100%; background: #27ae60; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 15px; }
+        .contenedor-registro button:hover { background: #219150; }
+        .login-link { text-align: center; margin-top: 15px; font-size: 0.9em; }
+        .login-link a { color: #2980b9; text-decoration: none; font-weight: bold; }
+    </style>
 </head>
 <body>
     <div class="contenedor-registro">
         <h2>Crea tu cuenta de Cazadores de Pigmentos</h2>
 
-        <form mathod="POST">
-
+        <form method="POST">
             {% csrf_token %}
-
-            {{ form.as_p}}
-
+            {{ form.as_p }}
             <button type="submit">Convertirme en Cazador</button>
         </form>
+
+        <div class="login-link">
+            ¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia Sesión</a>
+        </div>
     </div>
 </body>
 </html>

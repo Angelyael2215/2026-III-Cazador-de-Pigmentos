@@ -1,0 +1,29 @@
+{% extends 'usuarios/base_admin.html' %}
+
+{% block content %}
+<h2>Panel de Control - Administración de Cazadores de Pigmentos</h2>
+<p>Bienvenido al sistema de gestión de roles y permisos personalizado.</p>
+
+<div style="display: flex; gap: 20px; margin-top: 20px;">
+    <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+        <h3>1. Permisos</h3>
+        <p style="font-size: 2em; margin: 10px 0; font-weight: bold;">{{ total_permisos }}</p>
+        <p>Acciones registradas en el juego</p>
+        <a href="{% url 'gestion_permisos' %}" class="btn">Gestionar Permisos</a>
+    </div>
+
+    <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+        <h3>2. Roles</h3>
+        <p style="font-size: 2em; margin: 10px 0; font-weight: bold;">{{ total_roles }}</p>
+        <p>Grupos de acceso definidos</p>
+        <a href="{% url 'gestion_roles' %}" class="btn">Gestionar Roles</a>
+    </div>
+
+    <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
+        <h3>3. Usuarios</h3>
+        <p style="font-size: 2em; margin: 10px 0; font-weight: bold;">{{ total_usuarios }}</p>
+        <p>Usuarios con roles asignados</p>
+        <a href="{% url 'gestion_usuarios_roles' %}" class="btn">Gestionar Usuarios</a>
+    </div>
+</div>
+{% endblock %}

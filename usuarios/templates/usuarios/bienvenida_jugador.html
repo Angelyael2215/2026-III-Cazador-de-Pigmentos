@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Perfil de Cazador</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a252f; color: white; margin: 0; padding: 40px; display: flex; justify-content: center; }
+        .card { background: #2c3e50; padding: 30px; border-radius: 10px; width: 350px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .stats { background: #34495e; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; }
+        .btn-logout { background: #e74c3c; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>¡Hola, {{ request.user.username }}! 🎮</h1>
+        <p>Bienvenido a <strong>Cazadores de Pigmentos</strong>.</p>
+        
+        <div class="stats">
+            <p>❤️ <strong>Vidas:</strong> {{ perfil.vidas }}</p>
+            <p>💎 <strong>Gemas:</strong> {{ perfil.gemas }}</p>
+            <p>⭐ <strong>Nivel Máximo:</strong> {{ perfil.nivel_maximo_desbloqueado }}</p>
+        </div>
+
+        <a href="{% url 'logout' %}" class="btn-logout">Cerrar Sesión</a>
+    </div>
+</body>
+</html>
