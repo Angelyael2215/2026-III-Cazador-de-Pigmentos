@@ -1,0 +1,43 @@
+{% extends "usuarios/base_admin.html" %}
+
+{% block content %}
+<h2>{{ model_label }}</h2>
+
+{% if can_add %}
+    <p><a class="btn" href="{% url create_url %}">Crear</a></p>
+{% endif %}
+
+<table>
+    <thead>
+        <tr>
+            {% for header in headers %}
+                <th>{{ header }}</th>
+            {% endfor %}
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+            <tr>
+                {% for value in row.values %}
+                    <td>{{ value|default_if_none:"—" }}</td>
+                {% endfor %}
+                <td>
+                    {% if can_change %}
+                        <a class="btn btn-edit"
+                           href="{% url update_url row.object.pk %}">Editar</a>
+                    {% endif %}
+                    {% if can_delete %}
+                        <a class="btn"
+                           href="{% url delete_url row.object.pk %}">Eliminar</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="20">No hay registros.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

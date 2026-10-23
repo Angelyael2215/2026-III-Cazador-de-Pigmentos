@@ -1,0 +1,14 @@
+{% extends "usuarios/base_admin.html" %}
+
+{% block content %}
+<h2>Eliminar {{ model_label }}</h2>
+
+<p>¿Confirmas que quieres eliminar este registro?</p>
+<p>{{ object }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn">Confirmar eliminación</button>
+    <a href="{% url list_url %}">Cancelar</a>
+</form>
+{% endblock %}

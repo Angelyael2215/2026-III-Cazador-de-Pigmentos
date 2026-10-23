@@ -28,7 +28,10 @@
             <a href="{% url 'gestion_usuarios_roles' %}">3. Usuarios</a>
         </div>
         <div class="user-info">
-            👤 {{ request.user.username }} | <a href="{% url 'logout' %}">Cerrar Sesión</a>
+            👤 {{ request.user.username }} | <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit">Cerrar sesión</button>
+</form>
         </div>
     </nav>
     <div class="container">

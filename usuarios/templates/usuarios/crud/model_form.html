@@ -1,0 +1,12 @@
+{% extends "usuarios/base_admin.html" %}
+
+{% block content %}
+<h2>{{ model_label }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">Guardar</button>
+    <a href="{% url list_url %}">Cancelar</a>
+</form>
+{% endblock %}

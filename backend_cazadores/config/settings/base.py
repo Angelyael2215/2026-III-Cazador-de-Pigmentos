@@ -78,8 +78,6 @@ LOGGING = {
         },
     },
 }
-
-# --- REDIRECCIONES DE LOGIN Y LOGOUT ---
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard_admin'
-LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "bienvenida_jugador"
+LOGOUT_REDIRECT_URL = "login"

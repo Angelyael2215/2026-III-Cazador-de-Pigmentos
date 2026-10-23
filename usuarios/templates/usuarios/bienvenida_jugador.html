@@ -21,7 +21,10 @@
             <p>⭐ <strong>Nivel Máximo:</strong> {{ perfil.nivel_maximo_desbloqueado }}</p>
         </div>
 
-        <a href="{% url 'logout' %}" class="btn-logout">Cerrar Sesión</a>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-logout">Cerrar Sesión</button>
+        </form>
     </div>
 </body>
 </html>
