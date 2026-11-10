@@ -1,0 +1,11 @@
+{% extends "usuarios/base_admin.html" %}
+
+{% block content %}
+<h1>Eliminar nivel {{ level.number }}</h1>
+<p>¿Seguro que quieres eliminar “{{ level.title }}”? También se eliminará el progreso asociado a este nivel.</p>
+<form method="post">
+    {% csrf_token %}
+    <button class="btn" type="submit">Sí, eliminar</button>
+    <a class="btn btn-edit" href="{% url 'niveles_juego_lista' %}">Cancelar</a>
+</form>
+{% endblock %}

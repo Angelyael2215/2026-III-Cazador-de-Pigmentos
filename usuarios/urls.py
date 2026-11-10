@@ -30,6 +30,12 @@ urlpatterns = [
         views.asignar_roles_usuario,
         name="asignar_roles_usuario",
     ),
+    path(
+        "usuarios/<int:user_id>/permisos/",
+        views.asignar_permisos_usuario,
+        name="asignar_permisos_usuario",
+    ),
+    path("roles/<int:role_id>/eliminar/", views.eliminar_rol, name="eliminar_rol"),
 
     path("perfiles/", PerfilListView.as_view(), name="perfil_lista"),
     path("perfiles/nuevo/", PerfilCreateView.as_view(), name="perfil_crear"),

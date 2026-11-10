@@ -1,6 +1,8 @@
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse
 
+from .permissions import has_management_access
+
 
 class AppLoginView(LoginView):
     template_name = "usuarios/login.html"
@@ -11,7 +13,7 @@ class AppLoginView(LoginView):
         if next_url:
             return next_url
 
-        if self.request.user.is_staff or self.request.user.is_superuser:
+        if has_management_access(self.request.user):
             return reverse("dashboard_admin")
 
         return reverse("bienvenida_jugador")
