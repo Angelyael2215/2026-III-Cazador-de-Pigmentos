@@ -1,68 +1,6 @@
 {% extends 'usuarios/base_admin.html' %}
 
 {% block content %}
-<style>
-    .user-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        min-width: 290px;
-    }
-
-    .user-action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 36px;
-        padding: 7px 11px;
-        border: 1px solid transparent;
-        border-radius: 6px;
-        background: #eef2f5;
-        color: #263746;
-        font-size: 0.875rem;
-        font-weight: 600;
-        line-height: 1.2;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: background-color 0.15s ease, border-color 0.15s ease;
-    }
-
-    .user-action:hover,
-    .user-action:focus-visible {
-        border-color: #8797a5;
-        background: #e2e8ee;
-        color: #17232d;
-        text-decoration: underline;
-    }
-
-    .user-action--primary {
-        background: #e6f4ea;
-        color: #176b35;
-    }
-
-    .user-action--security {
-        background: #fff4dc;
-        color: #76500a;
-    }
-
-    .user-action--danger {
-        background: #fde9e7;
-        color: #a1261c;
-    }
-
-    @media (max-width: 700px) {
-        .user-actions {
-            min-width: 220px;
-            max-width: 270px;
-        }
-
-        .user-action {
-            flex: 1 1 auto;
-        }
-    }
-</style>
-
 <h2>Gestión de usuarios y permisos</h2>
 
 {% if can_add_user %}
@@ -73,31 +11,37 @@
 
 {% if can_view_user %}
     <form method="get" class="user-filters" role="search" aria-label="Buscar y filtrar usuarios">
-        <label for="user-search">Usuario o correo</label>
-        <input
-            type="search"
-            id="user-search"
-            name="q"
-            value="{{ search_query }}"
-            placeholder="Buscar por nombre o correo"
-        >
+        <label for="user-search">
+            Usuario o correo
+            <input
+                type="search"
+                id="user-search"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Buscar por nombre o correo"
+            >
+        </label>
 
-        <label for="user-status">Estado</label>
-        <select id="user-status" name="estado">
-            <option value="">Todos</option>
-            <option value="activo" {% if status_filter == "activo" %}selected{% endif %}>Activos</option>
-            <option value="inactivo" {% if status_filter == "inactivo" %}selected{% endif %}>Inactivos</option>
-        </select>
+        <label for="user-status">
+            Estado
+            <select id="user-status" name="estado">
+                <option value="">Todos</option>
+                <option value="activo" {% if status_filter == "activo" %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if status_filter == "inactivo" %}selected{% endif %}>Inactivos</option>
+            </select>
+        </label>
 
-        <label for="user-role">Rol</label>
-        <select id="user-role" name="rol">
-            <option value="">Todos los roles</option>
-            {% for role in roles %}
-                <option value="{{ role.pk }}" {% if role_filter == role.pk|stringformat:"s" %}selected{% endif %}>
-                    {{ role.name }}
-                </option>
-            {% endfor %}
-        </select>
+        <label for="user-role">
+            Rol
+            <select id="user-role" name="rol">
+                <option value="">Todos los roles</option>
+                {% for role in roles %}
+                    <option value="{{ role.pk }}" {% if role_filter == role.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ role.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
 
         <button type="submit" class="btn">Aplicar filtros</button>
         {% if has_user_filters %}
@@ -106,7 +50,7 @@
     </form>
 
     <p role="status">Resultados: {{ total_results }}</p>
-    <div class="table-responsive" style="overflow-x: auto;">
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
@@ -127,9 +71,9 @@
                         <td>{{ u.date_joined|date:"d/m/Y H:i" }}</td>
                         <td>
                             {% if u.is_active %}
-                                <span>Activo</span>
+                                <span class="status-badge">Activo</span>
                             {% else %}
-                                <span>Inactivo</span>
+                                <span class="status-badge status-badge--inactive">Inactivo</span>
                             {% endif %}
                         </td>
                         <td>
@@ -156,7 +100,7 @@
                         <td>
                             <div class="user-actions" aria-label="Acciones para {{ u.username }}">
                             {% if can_assign_roles %}
-                                <a class="user-action user-action--primary"
+                                <a class="user-action"
                                    href="{% url 'asignar_roles_usuario' u.id %}">Asignar roles</a>
                                 <a class="user-action"
                                    href="{% url 'asignar_permisos_usuario' u.id %}">Permisos individuales</a>
@@ -164,18 +108,18 @@
                             {% if can_change_user %}
                                 <a class="user-action"
                                    href="{% url 'editar_usuario' u.id %}">Editar</a>
-                                <a class="user-action user-action--security"
+                                <a class="user-action btn--secondary"
                                    href="{% url 'cambiar_contrasena_usuario' u.id %}">Cambiar contraseña</a>
                                 {% if u.is_active %}
-                                    <a class="user-action user-action--security"
+                                    <a class="user-action btn--secondary"
                                        href="{% url 'estado_usuario' u.id 'desactivar' %}">Desactivar</a>
                                 {% else %}
-                                    <a class="user-action user-action--primary"
+                                    <a class="user-action"
                                        href="{% url 'estado_usuario' u.id 'activar' %}">Activar</a>
                                 {% endif %}
                             {% endif %}
                             {% if can_delete_user %}
-                                <a class="user-action user-action--danger"
+                                <a class="user-action btn--danger"
                                    href="{% url 'eliminar_usuario' u.id %}">Eliminar</a>
                             {% endif %}
                             </div>

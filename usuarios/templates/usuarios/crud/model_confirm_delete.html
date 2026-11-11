@@ -1,14 +1,16 @@
 {% extends "usuarios/base_admin.html" %}
 
 {% block content %}
+<section class="confirm-card">
 <h2>Eliminar {{ model_label }}</h2>
 
 <p>¿Confirmas que quieres eliminar este registro?</p>
-<p>{{ object }}</p>
+<p><strong>{{ object }}</strong></p>
 
-<form method="post">
+<form method="post" class="form-actions">
     {% csrf_token %}
-    <button type="submit" class="btn">Confirmar eliminación</button>
-    <a href="{% url list_url %}">Cancelar</a>
+    <button type="submit" class="btn btn--danger">Confirmar eliminación</button>
+    <a class="btn btn--quiet" href="{% url list_url %}">Cancelar</a>
 </form>
+</section>
 {% endblock %}

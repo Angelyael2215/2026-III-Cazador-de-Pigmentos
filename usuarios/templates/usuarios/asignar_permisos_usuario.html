@@ -3,13 +3,8 @@
 <h2>Permisos individuales de {{ usuario_obj.username }}</h2>
 <p>Estos permisos se asignan solo a esta cuenta. No modifican los permisos de sus roles ni los de otros usuarios.</p>
 <p>Los permisos de los roles y los permisos individuales se suman. Para quitar acceso concedido por un rol, cambia la asignación del rol.</p>
-<style>
-    .permission-category { margin: 16px 0; padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; }
-    .permission-option { display: block; margin: 8px 0; }
-    .permission-option small { color: #5b6570; }
-</style>
 
-<form method="post">
+<form method="post" class="panel-form">
     {% csrf_token %}
     {{ form.user_permissions.errors }}
     {% for category in form.permission_categories %}
@@ -29,10 +24,13 @@
         </fieldset>
     {% endfor %}
     {% if can_change %}
-        <button type="submit" class="btn">Guardar permisos individuales</button>
+        <div class="form-actions">
+            <button type="submit" class="btn">Guardar permisos individuales</button>
+            <a class="btn btn--quiet" href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+        </div>
     {% else %}
         <p role="status">Tienes acceso de solo lectura a estos permisos.</p>
+        <a class="btn btn--quiet" href="{% url 'gestion_usuarios_roles' %}">Volver</a>
     {% endif %}
-    <a href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
 </form>
 {% endblock %}

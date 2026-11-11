@@ -3,10 +3,22 @@
 {% block content %}
 <h2>{{ model_label }}</h2>
 
-<form method="post">
+<form method="post" class="panel-form">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn">Guardar</button>
-    <a href="{% url list_url %}">Cancelar</a>
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        <p class="form-field{% if field.errors %} form-field--invalid{% endif %}">
+            {{ field.label_tag }}
+            {{ field }}
+            {{ field.errors }}
+            {% if field.help_text %}
+                <span class="helptext">{{ field.help_text }}</span>
+            {% endif %}
+        </p>
+    {% endfor %}
+    <div class="form-actions">
+        <button type="submit" class="btn">Guardar</button>
+        <a class="btn btn--quiet" href="{% url list_url %}">Cancelar</a>
+    </div>
 </form>
 {% endblock %}

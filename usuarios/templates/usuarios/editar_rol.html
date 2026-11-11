@@ -1,15 +1,14 @@
 {% extends 'usuarios/base_admin.html' %}
 {% block content %}
 <h2>Editar Rol: {{ rol.name }}</h2>
-<style>
-    .permission-category { margin: 16px 0; padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; }
-    .permission-option { display: block; margin: 8px 0; }
-    .permission-option small { color: #5b6570; }
-</style>
 
-<form method="post">
+<form method="post" class="panel-form">
     {% csrf_token %}
-    {{ form.name.label_tag }} {{ form.name }} {{ form.name.errors }}
+    <p>
+        {{ form.name.label_tag }}
+        {{ form.name }}
+        {{ form.name.errors }}
+    </p>
     <h3>{{ form.permissions.label }}</h3>
     {{ form.permissions.errors }}
     {% for category in form.permission_categories %}
@@ -27,7 +26,9 @@
             {% endfor %}
         </fieldset>
     {% endfor %}
-    <button type="submit" class="btn">Guardar Cambios</button>
-    <a href="{% url 'gestion_roles' %}">Cancelar</a>
+    <div class="form-actions">
+        <button type="submit" class="btn">Guardar cambios</button>
+        <a class="btn btn--quiet" href="{% url 'gestion_roles' %}">Cancelar</a>
+    </div>
 </form>
 {% endblock %}

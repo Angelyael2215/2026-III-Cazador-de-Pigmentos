@@ -3,10 +3,13 @@
 <h2>Asignar Roles al Usuario: {{ usuario_obj.username }}</h2>
 <p>Los cambios aquí modifican únicamente los roles asignados a esta cuenta. Para agregar permisos solo a este usuario, usa la opción “Permisos individuales” en la lista.</p>
 
-<form method="post">
+<form method="post" class="panel-form">
     {% csrf_token %}
+    {{ form.non_field_errors }}
     {{ form.as_p }}
-    <button type="submit" class="btn">Actualizar Roles</button>
-    <a href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+    <div class="form-actions">
+        <button type="submit" class="btn">Actualizar roles</button>
+        <a class="btn btn--quiet" href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+    </div>
 </form>
 {% endblock %}
