@@ -17,6 +17,42 @@ juego interactivo de combinacion de colores
 
 En desarrollo, `runserver` activa la recarga automática al detectar cambios. `runserver --noreload` solo desactiva esa recarga; normalmente no es necesario y no corrige errores de configuración o dependencias. Para seguir ejecutando SQLite, establece `DB_ENGINE=sqlite3` (o elimina esa variable); el valor predeterminado también es SQLite.
 
+## Datos ficticios para demostrar el panel
+
+Después de aplicar las migraciones, cada integrante puede preparar los mismos
+datos ficticios sin depender de una base de datos personal:
+
+```bash
+python manage.py demo_data load
+```
+
+El comando crea `demo_admin`, `demo_auditor` y `demo_jugador`, con los roles
+`DEMO | Administradores`, `DEMO | Solo lectura` y `DEMO | Jugadores`. También
+crea perfiles, niveles, progresos, logros y asignaciones identificados como
+DEMO. El rol de administración usa permisos de Django pero no convierte la
+cuenta en `staff` o superusuario. Las cuentas se crean sin contraseña utilizable;
+para iniciar sesión, configura una contraseña local e interactiva, por ejemplo:
+
+```bash
+python manage.py changepassword demo_admin
+```
+
+No se guarda ninguna contraseña en el repositorio. Repite `demo_data load` con
+seguridad: no duplica registros ni reemplaza datos. Si un nombre de cuenta DEMO
+ya pertenece a una cuenta distinta, el comando cancela la carga sin modificarla.
+
+Para limpiar los datos identificados por los nombres DEMO y los números de nivel
+reservados `9001`-`9003`, ejecuta:
+
+```bash
+python manage.py demo_data clean
+```
+
+La limpieza conserva grupos con integrantes ajenos a DEMO y niveles/logros que
+hayan adquirido relaciones con datos ajenos o cuyo contenido haya cambiado.
+También conserva una cuenta DEMO y sus datos relacionados si se reutilizó y
+acumuló actividad, permisos o grupos fuera del estado preparado por el comando.
+
 ## API de niveles para Flutter
 
 La API usa Firebase Authentication. Configura Application Default Credentials
