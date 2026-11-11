@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes de Accesibilidad</title>
+    <!-- Conexión al archivo CSS Neo-Brutalista -->
+    <link rel="stylesheet" href="{% static 'usuarios/css/neobrutalism.css' %}">
+</head>
+<body>
+
+    <div class="neo-box" style="max-width: 500px; margin: 0 auto;">
+        <a href="{% url 'bienvenida_jugador' %}" class="neo-btn" style="margin-bottom: 20px;">⬅️ Volver</a>
+        
+        <h2>⚙️ Ajustes de Accesibilidad</h2>
+        <p>Adapta la interfaz visual a tus necesidades.</p>
+
+        <form method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+            {% csrf_token %}
+            
+            <div>
+                <label style="font-weight: bold; font-size: 1.2rem;">Filtro de Daltonismo:</label><br>
+                <select name="modo_daltonismo" class="neo-box" style="width: 100%; font-size: 1rem; padding: 10px; margin-top: 10px;">
+                    <option value="normal" {% if ajustes.modo_daltonismo == 'normal' %}selected{% endif %}>Sin filtro (Visión Normal)</option>
+                    <option value="protanopia" {% if ajustes.modo_daltonismo == 'protanopia' %}selected{% endif %}>Protanopía (Ceguera al rojo)</option>
+                    <option value="deuteranopia" {% if ajustes.modo_daltonismo == 'deuteranopia' %}selected{% endif %}>Deuteranopía (Ceguera al verde)</option>
+                    <option value="tritanopia" {% if ajustes.modo_daltonismo == 'tritanopia' %}selected{% endif %}>Tritanopía (Ceguera al azul)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="neo-btn blue" style="width: 100%;">💾 Guardar Cambios</button>
+        </form>
+    </div>
+
+</body>
+</html>

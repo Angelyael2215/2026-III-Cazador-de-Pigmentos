@@ -1,0 +1,136 @@
+{% extends 'usuarios/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .game-screen {
+        max-width: 480px;
+        margin: 0 auto;
+        background: #111d28;
+        border: 4px solid #d4af37;
+        border-radius: 15px;
+        padding: 20px;
+        color: #fff;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        font-family: Arial, sans-serif;
+    }
+
+    .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #2c4a60;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .game-header a { color: #d4af37; text-decoration: none; font-weight: bold; font-size: 1.2rem; }
+    .stats { display: flex; gap: 15px; font-weight: bold; }
+
+    .objective-box {
+        background: #162636;
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .objective-box h3 { font-size: 0.8rem; color: #a0aec0; margin: 0 0 5px 0; letter-spacing: 1px; }
+    .objective-box p { font-size: 0.9rem; color: #cbd5e0; margin: 0; line-height: 1.4; }
+
+    .puzzle-area {
+        background: #162636;
+        border: 2px solid #2c4a60;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .sequence-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .color-box {
+        flex: 1;
+        height: 70px;
+        border-radius: 10px;
+        border: 2px solid rgba(255,255,255,0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: #fff;
+        font-weight: bold;
+    }
+
+    .options-row {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .option-btn {
+        width: 75px;
+        height: 75px;
+        border-radius: 12px;
+        border: 3px solid #d4af37;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .option-btn:hover { transform: scale(1.08); }
+
+    .btn-check {
+        width: 100%;
+        background: #27ae60;
+        color: white;
+        border: 3px solid #145a32;
+        padding: 14px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 5px 0px #145a32;
+    }
+</style>
+
+<div class="game-screen">
+    <div class="game-header">
+        <a href="{% url 'mapa_niveles' %}">←</a>
+        <span>Degradados - Nivel {{ numero_nivel }}</span>
+        <div class="stats">
+            <span>❤️ 5</span>
+            <span>💎 810</span>
+        </div>
+    </div>
+
+    <div class="objective-box">
+        <h3>DEGRADADOS</h3>
+        <p>Identifica cuál de las opciones completa la escala cromática sin romper el degradado.</p>
+    </div>
+
+    <div class="puzzle-area">
+        <div class="sequence-row">
+            <div class="color-box" style="background: #e040fb;"><span>H:302°</span><span>L:48%</span></div>
+            <div class="color-box" style="background: #332244; border: 2px dashed #d4af37;"><span>❓</span><span>H:? L:?%</span></div>
+            <div class="color-box" style="background: #f1948a;"><span>H:12°</span><span>L:68%</span></div>
+            <div class="color-box" style="background: #f1c40f;"><span>H:50°</span><span>L:61%</span></div>
+        </div>
+
+        <p style="font-size: 0.85rem; color: #a0aec0; margin-bottom: 15px;">SELECCIONA EL TONO DE REEMPLAZO CORRECTO:</p>
+
+        <div class="options-row">
+            <div class="option-btn" style="background: #da70d6;"></div>
+            <div class="option-btn" style="background: #e74c3c;"></div>
+            <div class="option-btn" style="background: #ff69b4;"></div>
+        </div>
+    </div>
+
+    <button class="btn-check">Comprobar</button>
+</div>
+{% endblock %}

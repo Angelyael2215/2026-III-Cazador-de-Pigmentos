@@ -1,41 +1,180 @@
+{% extends 'usuarios/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Perfil de Cazador</title>
-    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
-    <style>
-        body { font-family: Arial, sans-serif; background: #1a252f; color: white; margin: 0; padding: 40px 20px; }
-        .layout { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 350px) 1fr; gap: 24px; align-items: start; }
-        .card, .levels { background: #2c3e50; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .card { text-align: center; }
-        .stats { background: #34495e; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; }
-        .btn-logout { background: #e74c3c; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
-        .level-list { display: grid; gap: 12px; }
-        .level { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; background: #34495e; border-radius: 8px; }
-        .level h3, .level p { margin: 0 0 6px; }
-        .level p { color: #d7e1eb; }
-        .btn-play { background: #27ae60; color: white; padding: 9px 14px; text-decoration: none; border-radius: 5px; font-weight: bold; white-space: nowrap; }
-        .btn-locked { color: #c6d0da; }
-        .empty { color: #d7e1eb; line-height: 1.5; }
-        .admin-link { color: #9bd4ff; }
-        @media (max-width: 700px) { .layout { grid-template-columns: 1fr; } }
-    </style>
-</head>
-<body>
-    {% include "usuarios/partials/app_navigation.html" %}
-    <main id="main-content" class="layout">
-        <section class="card">
-            <h1>¡Hola, {{ request.user.username }}! 🎮</h1>
-            <p>Bienvenido a <strong>Cazadores de Pigmentos</strong>.</p>
 
-            <div class="stats">
-                <p>❤️ <strong>Vidas:</strong> {{ perfil.vidas }}</p>
-                <p>💎 <strong>Gemas:</strong> {{ perfil.gemas }}</p>
-                <p>⭐ <strong>Nivel máximo:</strong> {{ perfil.nivel_maximo_desbloqueado }}</p>
-                <p>✨ <strong>Experiencia:</strong> {{ player.xp }} XP</p>
+{% block content %}
+<style>
+    /* Contenedor principal de perfil a pantalla completa o centrado amplio */
+    .profile-fullscreen {
+        width: 100vw;
+        min-height: calc(100vh - 60px);
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        background: radial-gradient(circle at center, #1b3a4b 0%, #0b1922 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 20px 40px;
+        gap: 24px;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #fff;
+    }
+
+    /* Tarjeta principal contenedora */
+    .profile-card {
+        background: rgba(22, 38, 54, 0.95);
+        border: 4px solid #d4af37;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 850px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        box-sizing: border-box;
+    }
+
+    /* Títulos y textos legibles */
+    .profile-card h1 {
+        font-size: 2.3rem;
+        text-transform: uppercase;
+        color: #ffd700;
+        margin: 0 0 12px 0;
+        font-weight: 900;
+        letter-spacing: 1px;
+    }
+
+    .profile-card > p {
+        font-size: 1.15rem;
+        color: #cbd5e0;
+        margin-bottom: 35px;
+    }
+
+    /* Estadísticas (Vidas y Gemas) */
+    .stats-container {
+        display: flex;
+        justify-content: space-around;
+        gap: 20px;
+        margin-bottom: 35px;
+    }
+
+    .stat-box {
+        background: rgba(26, 46, 64, 0.9);
+        border: 3px solid #2c4a60;
+        border-radius: 15px;
+        padding: 20px;
+        flex: 1;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    }
+
+    .stat-box.lives { border-color: #27ae60; background: rgba(39, 174, 96, 0.15); }
+    .stat-box.gems { border-color: #f1c40f; background: rgba(241, 196, 15, 0.15); }
+
+    .stat-box h3 {
+        font-size: 1rem;
+        margin: 0 0 8px 0;
+        color: #fff;
+        font-weight: bold;
+    }
+
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 900;
+        margin: 0;
+        color: #fff;
+    }
+
+    /* Botones de navegación y acciones */
+    .actions-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .menu-btn {
+        display: block;
+        width: 100%;
+        padding: 16px;
+        font-size: 1.15rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        text-decoration: none;
+        border-radius: 12px;
+        border: 3px solid #000;
+        box-shadow: 0 5px 0px #000;
+        transition: transform 0.1s, box-shadow 0.1s;
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .menu-btn:active {
+        transform: translateY(3px);
+        box-shadow: 0 2px 0px #000;
+    }
+
+    .btn-map { background: #2980b9; color: white; border-color: #1f618d; }
+    .btn-settings { background: #f39c12; color: white; border-color: #d68910; }
+    .btn-logout { background: #e74c3c; color: white; border-color: #c0392b; width: 100%; cursor: pointer; }
+
+    .levels-card {
+        width: 100%;
+        max-width: 850px;
+        padding: 24px;
+        border-radius: 16px;
+        background: rgba(22, 38, 54, 0.95);
+        border: 2px solid #2c4a60;
+        box-sizing: border-box;
+    }
+
+    .level-list { display: grid; gap: 12px; }
+    .level-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px;
+        border-radius: 10px;
+        background: rgba(26, 46, 64, 0.9);
+    }
+    .level-item h3, .level-item p { margin: 0 0 6px; }
+    .level-item p, .levels-empty { color: #cbd5e0; }
+    .level-play { color: #fff; background: #27ae60; padding: 9px 14px; border-radius: 6px; text-decoration: none; }
+    .level-locked { color: #cbd5e0; }
+
+    /* Responsividad inteligente para móviles */
+    @media (max-width: 768px) {
+        .profile-fullscreen { padding: 15px; align-items: center; }
+        .profile-card { padding: 25px; }
+        .profile-card h1 { font-size: 1.8rem; }
+        .profile-card > p { font-size: 1rem; }
+        .stat-number { font-size: 1.8rem; }
+        .menu-btn { font-size: 1rem; padding: 14px; }
+    }
+</style>
+
+<div class="profile-fullscreen">
+    <div class="profile-card">
+        <h1>¡Hola, {{ request.user.username }}!</h1>
+        <p>Bienvenido al laboratorio de color. ¿Listo para cazar pigmentos?</p>
+        
+        <div class="stats-container">
+            <div class="stat-box lives">
+                <h3>❤️ Vidas</h3>
+                <p class="stat-number">{{ perfil.vidas }}</p>
             </div>
+            <div class="stat-box gems">
+                <h3>💎 Gemas</h3>
+                <p class="stat-number">{{ perfil.gemas }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>⭐ Nivel máximo</h3>
+                <p class="stat-number">{{ perfil.nivel_maximo_desbloqueado }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>✨ Experiencia</h3>
+                <p class="stat-number">{{ player.xp }}</p>
+            </div>
+        </div>
 
         </section>
 
@@ -65,7 +204,7 @@
                     <a class="admin-link" href="{% url 'niveles_juego_crear' %}">Crear niveles desde el panel de administración</a>
                 {% endif %}
             {% endif %}
-        </section>
-    </main>
-</body>
-</html>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

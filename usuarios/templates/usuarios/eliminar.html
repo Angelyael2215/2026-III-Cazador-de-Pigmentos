@@ -1,9 +1,9 @@
-{% extends 'usuarios/base_admin.html' %} 
+{% extends 'usuarios/base_admin.html' %}
 
 {% block content %}
 <div style="max-width: 600px; margin: 20px auto; text-align: center;">
     <h2>Confirmar Eliminación</h2>
-    
+
     <div style="padding: 20px; border: 1px solid #e74c3c; border-radius: 6px; background-color: #fadbd8; color: #c0392b; margin: 20px 0;">
         <p>¿Estás seguro de que deseas eliminar <strong>{{ objeto }}</strong>?</p>
         <p>Esta acción es permanente y no se puede deshacer.</p>
@@ -11,11 +11,11 @@
 
     <form method="POST">
         {% csrf_token %}
-       
+
         <button type="submit" class="btn" style="background-color: #e74c3c;">
             Sí, eliminar
         </button>
-        
+
         <a href="javascript:history.back()" class="btn" style="background-color: #7f8c8d; margin-left: 10px;">
             Cancelar
         </a>
