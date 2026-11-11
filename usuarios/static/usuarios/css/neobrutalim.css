@@ -1,0 +1,50 @@
+/* static/css/neobrutalism.css */
+:root {
+    --bg-color: #f4f4f0;
+    --main-color: #ff3b3b; /* Rojo fuerte */
+    --secondary-color: #4a90e2; /* Azul fuerte */
+    --accent-color: #f5a623; /* Amarillo fuerte */
+    --text-color: #000000;
+    --border-color: #000000;
+    --border-width: 4px;
+    --shadow-offset: 6px;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Courier New', Courier, monospace; /* O una tipografía sans-serif gruesa */
+    margin: 0;
+    padding: 20px;
+}
+
+.neo-box {
+    background-color: white;
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 0; /* Geometría rígida */
+}
+
+.neo-btn {
+    background-color: var(--main-color);
+    color: white;
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: 4px 4px 0px var(--border-color);
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.1s ease;
+}
+
+.neo-btn:active {
+    box-shadow: 0px 0px 0px var(--border-color);
+    transform: translate(4px, 4px);
+}
+
+.neo-btn.blue { background-color: var(--secondary-color); }
+.neo-btn.yellow { background-color: var(--accent-color); color: black;}

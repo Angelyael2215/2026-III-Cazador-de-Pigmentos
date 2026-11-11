@@ -64,4 +64,7 @@ urlpatterns = [
         EvaluacionDeleteView.as_view(),
         name="evaluacion_eliminar",
     ),
+    path('jugador/mapa/', views.mapa_niveles, name='mapa_niveles'),
+    path('jugador/ajustes/', views.ajustes_jugador, name='ajustes_jugador'),
+    path('gestion/jugador/nivel/<int:numero_nivel>/', views.detalle_nivel, name='detalle_nivel'),
 ]

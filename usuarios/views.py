@@ -5,7 +5,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout
 from django.core.exceptions import PermissionDenied
 from .forms import RolForm, AsignarRolUsuarioForm, PermisoForm, RegistroUsuarioForm
-from .models import PerfilUsuario
+from .models import PerfilUsuario, EvaluacionAccesibilidad
+from niveles.models import Nivel, Progreso
 
 # --- FUNCIÓN DE VERIFICACIÓN: Solo permite Superusuarios o Staff ---
 def es_administrador(user):
@@ -25,6 +26,7 @@ def registro_view(request):
             usuario = form.save()
             # Se crea automáticamente su perfil de jugador con datos básicos
             PerfilUsuario.objects.create(usuario=usuario)
+            EvaluacionAccesibilidad.objects.create(usuario=usuario)
             return redirect('login')
     else:
         form = RegistroUsuarioForm()
@@ -65,9 +67,49 @@ def logout_view(request):
 # --- VISTA PARA JUGADORES NORMALES ---
 @login_required
 def bienvenida_jugador(request):
-    perfil = request.user.perfilusuario
+    perfil, created = PerfilUsuario.objects.get_or_create(usuario=request.user)
     return render(request, 'usuarios/bienvenida_jugador.html', {'perfil': perfil})
 
+@login_required
+def mapa_niveles(request):
+    # Obtenemos todos los niveles ordenados por su número
+    niveles = Nivel.objects.all().order_by('numero')
+    
+    context = {
+        'niveles': niveles,
+    }
+    return render(request, 'usuarios/mapa.html', context)
+
+
+@login_required
+def ajustes_jugador(request):
+  # Buscamos de forma segura los ajustes existentes
+    ajustes = EvaluacionAccesibilidad.objects.filter(usuario=request.user).first()
+    
+    # Si no existen, los creamos pasando todos los campos requeridos por el modelo
+    if not ajustes:
+        ajustes = EvaluacionAccesibilidad.objects.create(
+            usuario=request.user,
+            color_fondo_hex='#FFFFFF',
+            color_texto_hex='#000000',
+            ratio_contraste=21.00,
+            cumple_wcag_aa=True,
+            cumple_wcag_aaa=True
+        )
+    
+    if request.method == 'POST':
+        color_fondo = request.POST.get('color_fondo_hex', '#FFFFFF')
+        color_texto = request.POST.get('color_texto_hex', '#000000')
+        
+        ajustes.color_fondo_hex = color_fondo
+        ajustes.color_texto_hex = color_texto
+        ajustes.save()
+        return redirect('bienvenida_jugador')
+        
+    context = {
+        'ajustes': ajustes,
+    }
+    return render(request, 'usuarios/ajustes.html', context)
 
 # --- VISTAS PROTEGIDAS (SOLO ADMINISTRADORES) ---
 
@@ -129,3 +171,39 @@ def asignar_roles_usuario(request, user_id):
         form.save()
         return redirect('gestion_usuarios_roles')
     return render(request, 'usuarios/asignar_roles.html', {'form': form, 'usuario_obj': usuario_obj})
+
+
+@login_required
+def detalle_nivel(request, numero_nivel):
+    # Alterna entre la plantilla de mezcla o degradado según el número de nivel
+    if numero_nivel % 2 == 0:
+        template_name = 'niveles/plantilla_degradado.html'
+    else:
+        template_name = 'niveles/plantilla_mezcla.html'
+        
+    context = {
+        'numero_nivel': numero_nivel,
+    }
+    return render(request, template_name, context)
+
+
+@login_required
+def detalle_nivel(request, numero_nivel):
+    # Asignar plantilla específica según el tipo de mecánica del nivel
+    if numero_nivel in [1]:
+        template_name = 'niveles/nivel_arrastrar.html'
+    elif numero_nivel in [2, 5, 6, 15, 20]:
+        template_name = 'niveles/nivel_deslizadores.html'
+    elif numero_nivel in [3, 7, 16]:
+        template_name = 'niveles/nivel_rueda.html'
+    elif numero_nivel in [4, 8, 12, 17, 23]:
+        template_name = 'niveles/nivel_seleccion.html'
+    elif numero_nivel in [9, 13, 18]:
+        template_name = 'niveles/nivel_simulador.html'
+    else:  # Niveles 10, 11, 14, 19, 21, 22, 24, 25 (Jefe final / Alquimia / WCAG)
+        template_name = 'niveles/nivel_auditor.html'
+        
+    context = {
+        'numero_nivel': numero_nivel,
+    }
+    return render(request, template_name, context)
