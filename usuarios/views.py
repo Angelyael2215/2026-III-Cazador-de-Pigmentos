@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseNotAllowed
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.contrib.auth.forms import SetPasswordForm
 from .forms import (
     AsignarPermisosUsuarioForm,
@@ -11,6 +12,7 @@ from .forms import (
     PermisoForm,
     RegistroUsuarioForm,
     describe_permission,
+    group_permissions_by_app_and_action,
     group_permissions_by_action,
 )
 from .models import PerfilUsuario, EvaluacionAccesibilidad
@@ -176,13 +178,19 @@ def gestion_permisos(request):
 def gestion_roles(request):
     can_view = user_has_permission(request.user, "auth.view_group")
     roles = Group.objects.none()
+    search_query = request.GET.get("q", "").strip()
     if can_view:
-        roles = Group.objects.all().prefetch_related('permissions__content_type')
+        roles = (
+            Group.objects.annotate(user_count=Count("user", distinct=True))
+            .prefetch_related('permissions__content_type')
+            .order_by("name")
+        )
+        if search_query:
+            roles = roles.filter(name__icontains=search_query)
         for role in roles:
-            role.permission_descriptions = [
-                describe_permission(permission)
-                for permission in role.permissions.all()
-            ]
+            role.permission_groups = group_permissions_by_app_and_action(
+                role.permissions.all()
+            )
     can_add = user_has_permission(request.user, "auth.add_group")
     if request.method == 'POST' and not can_add:
         raise PermissionDenied
@@ -208,6 +216,7 @@ def gestion_roles(request):
             'can_view': can_view,
             'can_change': can_change,
             'can_delete': user_has_permission(request.user, "auth.delete_group"),
+            'search_query': search_query,
         },
     )
 
@@ -293,7 +302,10 @@ def gestion_usuarios_roles(request):
             'can_add_user': user_has_permission(request.user, "auth.add_user"),
             'can_change_user': user_has_permission(request.user, "auth.change_user"),
             'can_delete_user': user_has_permission(request.user, "auth.delete_user"),
-            'can_assign_roles': es_administrador(request.user),
+            'can_assign_roles': (
+                user_has_permission(request.user, "auth.change_user")
+                and user_has_permission(request.user, "auth.change_group")
+            ),
             'search_query': search_query,
             'status_filter': status_filter,
             'role_filter': role_filter,
@@ -302,7 +314,11 @@ def gestion_usuarios_roles(request):
     )
 
 
-@user_passes_test(es_administrador, login_url='login')
+@user_passes_test(
+    lambda user: user_has_permission(user, "auth.change_user")
+    and user_has_permission(user, "auth.change_group"),
+    login_url='login',
+)
 def asignar_roles_usuario(request, user_id):
     usuario_obj = get_object_or_404(User, id=user_id)
     form = AsignarRolUsuarioForm(request.POST or None, instance=usuario_obj)
@@ -358,7 +374,13 @@ def eliminar_rol(request, role_id):
     if request.method == 'POST':
         rol.delete()
         return redirect('gestion_roles')
-    return render(request, 'usuarios/eliminar.html', {'objeto': rol})
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET", "POST"])
+    return render(
+        request,
+        "usuarios/confirmar_eliminar_rol.html",
+        {"rol": rol},
+    )
 
 
 @user_passes_test(
