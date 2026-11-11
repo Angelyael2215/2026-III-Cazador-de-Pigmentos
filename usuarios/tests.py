@@ -617,6 +617,34 @@ class UserManagementTests(TestCase):
         self.assertContains(response, email_match.email)
         self.assertNotContains(response, selected.username)
 
+    def test_user_listing_empty_results_renders_without_user_actions(self):
+        response = self.client.get(
+            "/gestion/usuarios/",
+            {"q": "no-such-user-or-email"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No hay usuarios que coincidan con los filtros.")
+
+    def test_user_actions_are_styled_as_separate_buttons(self):
+        user = get_user_model().objects.create_user(
+            username="action-button-user",
+            email="action-buttons@example.com",
+        )
+
+        response = self.client.get("/gestion/usuarios/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'class="user-actions" aria-label="Acciones para {self.admin.username}"',
+        )
+        self.assertContains(response, "user-action--primary")
+        self.assertContains(response, "user-action--security")
+        self.assertContains(response, "user-action--danger")
+        self.assertContains(response, "Cambiar contraseña")
+        self.assertContains(response, "Asignar roles")
+
     def test_user_list_shows_account_metadata_without_password_data(self):
         user = get_user_model().objects.create_user(
             username="visible-account",
@@ -873,6 +901,26 @@ class RoleManagementCrudTests(TestCase):
         role.refresh_from_db()
         self.assertEqual(role.name, "palette-editors")
         self.assertQuerySetEqual(role.permissions.all(), [self.profile_add])
+
+    def test_role_permission_grants_access_to_protected_profile_list(self):
+        response = self.client.post(
+            "/gestion/roles/",
+            {
+                "name": "profile-list-readers",
+                "permissions": [self.profile_view.pk],
+            },
+        )
+        self.assertRedirects(response, "/gestion/roles/")
+        role = Group.objects.get(name="profile-list-readers")
+        member = get_user_model().objects.create_user(
+            username="profile-list-reader-member",
+        )
+        member.groups.add(role)
+        self.client.force_login(member)
+
+        listing = self.client.get("/gestion/perfiles/")
+
+        self.assertEqual(listing.status_code, 200)
 
     def test_assign_and_remove_multiple_roles_updates_effective_permissions(self):
         user = get_user_model().objects.create_user(username="role-assignment-target")

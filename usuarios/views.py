@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseNotAllowed
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.forms import SetPasswordForm
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_GET
+from django.db.models import Count, Q
 from .forms import (
     AsignarPermisosUsuarioForm,
     RolForm,
@@ -183,7 +185,7 @@ def gestion_roles(request):
         if search_query:
             roles = roles.filter(name__icontains=search_query)
         for role in roles:
-            role.permission_groups = group_permissions_by_app_and_action(
+            role.permission_groups = group_permissions_by_app_model_action(
                 role.permissions.all()
             )
     can_add = user_has_permission(request.user, "auth.add_group")
@@ -293,6 +295,10 @@ def gestion_usuarios_roles(request):
         'usuarios/gestion_usuarios.html',
         {
             'usuarios': usuarios,
+            'roles': Group.objects.order_by("name"),
+            'search_query': search_query,
+            'status_filter': status_filter,
+            'role_filter': role_filter,
             'can_view_user': can_view,
             'can_add_user': user_has_permission(request.user, "auth.add_user"),
             'can_change_user': user_has_permission(request.user, "auth.change_user"),

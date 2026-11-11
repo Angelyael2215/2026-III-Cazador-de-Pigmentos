@@ -1,6 +1,68 @@
 {% extends 'usuarios/base_admin.html' %}
 
 {% block content %}
+<style>
+    .user-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        min-width: 290px;
+    }
+
+    .user-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        padding: 7px 11px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: #eef2f5;
+        color: #263746;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.2;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .user-action:hover,
+    .user-action:focus-visible {
+        border-color: #8797a5;
+        background: #e2e8ee;
+        color: #17232d;
+        text-decoration: underline;
+    }
+
+    .user-action--primary {
+        background: #e6f4ea;
+        color: #176b35;
+    }
+
+    .user-action--security {
+        background: #fff4dc;
+        color: #76500a;
+    }
+
+    .user-action--danger {
+        background: #fde9e7;
+        color: #a1261c;
+    }
+
+    @media (max-width: 700px) {
+        .user-actions {
+            min-width: 220px;
+            max-width: 270px;
+        }
+
+        .user-action {
+            flex: 1 1 auto;
+        }
+    }
+</style>
+
 <h2>Gestión de usuarios y permisos</h2>
 
 {% if can_add_user %}
@@ -89,22 +151,31 @@
                             {% endfor %}
                         </td>
                         <td>
+                            <div class="user-actions" aria-label="Acciones para {{ u.username }}">
                             {% if can_assign_roles %}
-                                <a href="{% url 'asignar_roles_usuario' u.id %}">Asignar roles</a>
-                                <a href="{% url 'asignar_permisos_usuario' u.id %}">Permisos individuales</a>
+                                <a class="user-action user-action--primary"
+                                   href="{% url 'asignar_roles_usuario' u.id %}">Asignar roles</a>
+                                <a class="user-action"
+                                   href="{% url 'asignar_permisos_usuario' u.id %}">Permisos individuales</a>
                             {% endif %}
                             {% if can_change_user %}
-                                <a href="{% url 'editar_usuario' u.id %}">Editar</a>
-                                <a href="{% url 'cambiar_contrasena_usuario' u.id %}">Cambiar contraseña</a>
+                                <a class="user-action"
+                                   href="{% url 'editar_usuario' u.id %}">Editar</a>
+                                <a class="user-action user-action--security"
+                                   href="{% url 'cambiar_contrasena_usuario' u.id %}">Cambiar contraseña</a>
                                 {% if u.is_active %}
-                                    <a href="{% url 'estado_usuario' u.id 'desactivar' %}">Desactivar</a>
+                                    <a class="user-action user-action--security"
+                                       href="{% url 'estado_usuario' u.id 'desactivar' %}">Desactivar</a>
                                 {% else %}
-                                    <a href="{% url 'estado_usuario' u.id 'activar' %}">Activar</a>
+                                    <a class="user-action user-action--primary"
+                                       href="{% url 'estado_usuario' u.id 'activar' %}">Activar</a>
                                 {% endif %}
                             {% endif %}
                             {% if can_delete_user %}
-                                <a href="{% url 'eliminar_usuario' u.id %}">Eliminar</a>
+                                <a class="user-action user-action--danger"
+                                   href="{% url 'eliminar_usuario' u.id %}">Eliminar</a>
                             {% endif %}
+                            </div>
                         </td>
                     </tr>
                 {% empty %}
@@ -112,24 +183,7 @@
                         <td colspan="7">No hay usuarios que coincidan con los filtros.</td>
                     </tr>
                 {% endfor %}
-            </td>
-            <td>
-                {% if can_assign_roles %}
-                    <a href="{% url 'asignar_roles_usuario' u.id %}" class="btn btn-edit">Asignar Roles</a>
-                {% endif %}
-                {% if can_view_user_permissions %}
-                    <a href="{% url 'asignar_permisos_usuario' u.id %}" class="btn">Permisos individuales</a>
-                {% endif %}
-                {% if can_change_user %}
-                    <a href="{% url 'editar_usuario' u.id %}" class="btn" style="background-color: #17a2b8; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; margin-left: 5px;">Editar</a>
-                {% endif %}
-                {% if can_delete_user %}
-                    <a href="{% url 'eliminar_usuario' u.id %}" class="btn" style="background-color: #dc3545; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; margin-left: 5px;">Eliminar</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
+            </tbody>
 </table>
 {% endif %}
 {% endblock %}
