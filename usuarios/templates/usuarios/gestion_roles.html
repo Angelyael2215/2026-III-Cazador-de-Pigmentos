@@ -1,41 +1,84 @@
 {% extends 'usuarios/base_admin.html' %}
 {% block content %}
 <h2>2. Gestión de Roles</h2>
+<style>
+    .permission-category {
+        margin: 16px 0;
+        padding: 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+    }
+    .permission-option {
+        display: block;
+        margin: 8px 0;
+    }
+    .permission-option small {
+        color: #5b6570;
+    }
+</style>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn">Crear Rol</button>
-</form>
+{% if can_add %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.name.label_tag }} {{ form.name }} {{ form.name.errors }}
+        {% if can_change %}
+            <h3>{{ form.permissions.label }}</h3>
+            {{ form.permissions.errors }}
+            {% for category in form.permission_categories %}
+                <fieldset class="permission-category">
+                    <legend>{{ category.name }}</legend>
+                    {% for option in category.permissions %}
+                        <label class="permission-option">
+                            <input type="checkbox" name="permissions"
+                                   value="{{ option.permission.pk }}"
+                                   id="id_permissions_{{ option.permission.pk }}"
+                                   {% if option.permission.pk|stringformat:"s" in form.selected_permissions %}checked{% endif %}>
+                            <strong>{{ option.label }}</strong>
+                            <small>{{ option.description }} Código: {{ option.permission.codename }}</small>
+                        </label>
+                    {% endfor %}
+                </fieldset>
+            {% endfor %}
+        {% endif %}
+        <button type="submit" class="btn">Crear Rol</button>
+    </form>
+{% endif %}
 
-<hr>
-<h3>Roles Existentes</h3>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Rol</th>
-            <th>Permisos Asignados</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for rol in roles %}
-        <tr>
-            <td>{{ rol.id }}</td>
-            <td><strong>{{ rol.name }}</strong></td>
-            <td>
-                {% for p in rol.permissions.all %}
-                    <code>{{ p.codename }}</code>{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    <em>Sin permisos</em>
-                {% endfor %}
-            </td>
-            <td>
-                <a href="{% url 'editar_rol' rol.id %}" class="btn btn-edit">Editar Permisos</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% if can_view %}
+    <hr>
+    <h3>Roles Existentes</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Rol</th>
+                <th>Permisos Asignados</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rol in roles %}
+            <tr>
+                <td>{{ rol.id }}</td>
+                <td><strong>{{ rol.name }}</strong></td>
+                <td>
+                    {% for permission in rol.permission_descriptions %}
+                        <span title="{{ permission.description }}">{{ permission.label }}</span>{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        <em>Sin permisos</em>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% if can_change %}
+                        <a href="{% url 'editar_rol' rol.id %}" class="btn btn-edit">Editar Permisos</a>
+                    {% endif %}
+                    {% if can_delete %}
+                        <a href="{% url 'eliminar_rol' rol.id %}" class="btn">Eliminar</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
 {% endblock %}

@@ -12,9 +12,10 @@
         background: radial-gradient(circle at center, #1b3a4b 0%, #0b1922 100%);
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         padding: 20px 40px;
+        gap: 24px;
         box-sizing: border-box;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #fff;
@@ -26,7 +27,7 @@
         border: 4px solid #d4af37;
         border-radius: 20px;
         padding: 40px;
-        max-width: 650px;
+        max-width: 850px;
         width: 100%;
         text-align: center;
         box-shadow: 0 15px 35px rgba(0,0,0,0.6);
@@ -115,9 +116,34 @@
     .btn-settings { background: #f39c12; color: white; border-color: #d68910; }
     .btn-logout { background: #e74c3c; color: white; border-color: #c0392b; width: 100%; cursor: pointer; }
 
+    .levels-card {
+        width: 100%;
+        max-width: 850px;
+        padding: 24px;
+        border-radius: 16px;
+        background: rgba(22, 38, 54, 0.95);
+        border: 2px solid #2c4a60;
+        box-sizing: border-box;
+    }
+
+    .level-list { display: grid; gap: 12px; }
+    .level-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px;
+        border-radius: 10px;
+        background: rgba(26, 46, 64, 0.9);
+    }
+    .level-item h3, .level-item p { margin: 0 0 6px; }
+    .level-item p, .levels-empty { color: #cbd5e0; }
+    .level-play { color: #fff; background: #27ae60; padding: 9px 14px; border-radius: 6px; text-decoration: none; }
+    .level-locked { color: #cbd5e0; }
+
     /* Responsividad inteligente para móviles */
     @media (max-width: 768px) {
-        .profile-fullscreen { padding: 15px; }
+        .profile-fullscreen { padding: 15px; align-items: center; }
         .profile-card { padding: 25px; }
         .profile-card h1 { font-size: 1.8rem; }
         .profile-card > p { font-size: 1rem; }
@@ -140,6 +166,14 @@
                 <h3>💎 Gemas</h3>
                 <p class="stat-number">{{ perfil.gemas }}</p>
             </div>
+            <div class="stat-box">
+                <h3>⭐ Nivel máximo</h3>
+                <p class="stat-number">{{ perfil.nivel_maximo_desbloqueado }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>✨ Experiencia</h3>
+                <p class="stat-number">{{ player.xp }}</p>
+            </div>
         </div>
 
         <div class="actions-container">
@@ -152,5 +186,32 @@
             </form>
         </div>
     </div>
+    <section class="levels-card">
+        <h2>Mis niveles</h2>
+        {% if levels %}
+            <div class="level-list">
+                {% for item in levels %}
+                    <article class="level-item">
+                        <div>
+                            <h3>Nivel {{ item.level.number }}: {{ item.level.title }}</h3>
+                            <p>{{ item.level.get_kind_display }}{% if item.completed %} · Completado{% endif %}</p>
+                        </div>
+                        {% if item.unlocked %}
+                            <a class="level-play" href="{% url 'jugar_nivel' item.level.number %}">
+                                {% if item.completed %}Volver a jugar{% else %}Jugar{% endif %}
+                            </a>
+                        {% else %}
+                            <span class="level-locked">🔒 Bloqueado</span>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="levels-empty">Todavía no hay niveles activos para jugar.</p>
+            {% if request.user.is_staff %}
+                <a href="{% url 'niveles_juego_crear' %}">Crear niveles desde el panel de administración</a>
+            {% endif %}
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

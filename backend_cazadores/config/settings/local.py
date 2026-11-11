@@ -3,11 +3,13 @@ import os
 from .base import *
 
 DEBUG = True
-ALLOWED_HOSTS = os.getenv(
-    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"
-).split(",")
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+] or ["localhost", "127.0.0.1"]
 
-DB_ENGINE = os.getenv("DB_ENGINE", "sqlite3").strip()
+DB_ENGINE = (os.getenv("DB_ENGINE") or "sqlite3").strip()
 
 if DB_ENGINE in ("sqlite3", "django.db.backends.sqlite3"):
     DATABASES = {

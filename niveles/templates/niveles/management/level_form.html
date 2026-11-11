@@ -1,0 +1,12 @@
+{% extends "usuarios/base_admin.html" %}
+
+{% block content %}
+<h1>{{ page_title }}</h1>
+<p>La solución solo se usa en el servidor y no se muestra a los jugadores.</p>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Guardar nivel</button>
+    <a class="btn btn-edit" href="{% url 'niveles_juego_lista' %}">Cancelar</a>
+</form>
+{% endblock %}

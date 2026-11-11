@@ -1,6 +1,74 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
+class LevelKind(models.TextChoices):
+    MIX = "mix", "Mezclas"
+    BRANDING = "branding", "Branding"
+    GRADIENT = "gradient", "Degradados"
+    CONTRAST = "contrast", "Contraste"
+    HARMONY = "harmony", "Armonía"
+    COLOR_BLINDNESS = "color_blindness", "Daltonismo"
+    RGB = "rgb", "Laboratorio RGB"
+    TEMPERATURE = "temperature", "Temperatura"
+    HEX = "hex", "Código HEX"
+    ALBERS = "albers", "Ilusión óptica"
+    ATMOSPHERE = "atmosphere", "Atmósferas"
+    SATURATION = "saturation", "Saturación"
+
+
+class Level(models.Model):
+    number = models.PositiveIntegerField(unique=True)
+    kind = models.CharField(max_length=32, choices=LevelKind.choices)
+    title = models.CharField(max_length=100)
+    instruction = models.TextField()
+    data = models.JSONField(default=dict)
+    solution = models.JSONField(default=dict)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["number"]
+
+    def __str__(self):
+        return f"{self.number}: {self.title}"
+
+
+class Player(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="level_player",
+        null=True,
+        blank=True,
+    )
+    firebase_uid = models.CharField(max_length=128, unique=True, null=True, blank=True)
+    current_level_reached = models.PositiveIntegerField(default=1)
+    xp = models.PositiveIntegerField(default=0)
+    pigments = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.firebase_uid or (self.user.get_username() if self.user else str(self.pk))
+
+
+class LevelProgress(models.Model):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    level = models.ForeignKey(Level, on_delete=models.CASCADE)
+    attempts = models.PositiveIntegerField(default=0)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["player", "level"],
+                name="one_progress_per_player_level",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.player} - {self.level}"
+
+
 class Nivel(models.Model):
     numero = models.IntegerField(unique=True)
     nombre = models.CharField(max_length=100)

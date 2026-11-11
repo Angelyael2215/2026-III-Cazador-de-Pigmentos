@@ -1,9 +1,24 @@
 from django.urls import path
 
 from . import views
+from . import admin_panel_views
+from .game_views import play_level
 
 
 urlpatterns = [
+    path("jugar/<int:number>/", play_level, name="jugar_nivel"),
+    path("juego/", admin_panel_views.level_list, name="niveles_juego_lista"),
+    path("juego/nuevo/", admin_panel_views.level_create, name="niveles_juego_crear"),
+    path(
+        "juego/<int:pk>/editar/",
+        admin_panel_views.level_update,
+        name="niveles_juego_editar",
+    ),
+    path(
+        "juego/<int:pk>/eliminar/",
+        admin_panel_views.level_delete,
+        name="niveles_juego_eliminar",
+    ),
     path("", views.NivelListView.as_view(), name="nivel_lista"),
     path("nuevo/", views.NivelCreateView.as_view(), name="nivel_crear"),
     path("<int:pk>/editar/", views.NivelUpdateView.as_view(), name="nivel_editar"),

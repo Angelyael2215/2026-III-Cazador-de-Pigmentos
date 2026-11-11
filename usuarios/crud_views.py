@@ -1,11 +1,12 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
+from .permissions import AppPermissionRequiredMixin, user_has_permission
 from .models import EvaluacionAccesibilidad, PerfilUsuario
 
 
-class CrudAccessMixin(LoginRequiredMixin, PermissionRequiredMixin):
+class CrudAccessMixin(LoginRequiredMixin, AppPermissionRequiredMixin):
     raise_exception = True
     route_prefix = ""
 
@@ -75,9 +76,15 @@ class CrudListContextMixin(CrudAccessMixin):
         context["create_url"] = f"{self.route_prefix}_crear"
         context["update_url"] = f"{self.route_prefix}_editar"
         context["delete_url"] = f"{self.route_prefix}_eliminar"
-        context["can_add"] = user.has_perm(f"{app_label}.add_{model_name}")
-        context["can_change"] = user.has_perm(f"{app_label}.change_{model_name}")
-        context["can_delete"] = user.has_perm(f"{app_label}.delete_{model_name}")
+        context["can_add"] = user_has_permission(
+            user, f"{app_label}.add_{model_name}"
+        )
+        context["can_change"] = user_has_permission(
+            user, f"{app_label}.change_{model_name}"
+        )
+        context["can_delete"] = user_has_permission(
+            user, f"{app_label}.delete_{model_name}"
+        )
 
         return context
 

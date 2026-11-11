@@ -1,6 +1,7 @@
 {% extends 'usuarios/base_admin.html' %}
 {% block content %}
 <h2>Asignar Roles al Usuario: {{ usuario_obj.username }}</h2>
+<p>Los cambios aquí modifican únicamente los roles asignados a esta cuenta. Para agregar permisos solo a este usuario, usa la opción “Permisos individuales” en la lista.</p>
 
 <form method="post">
     {% csrf_token %}

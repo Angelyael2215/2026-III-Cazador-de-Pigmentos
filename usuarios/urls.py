@@ -30,6 +30,12 @@ urlpatterns = [
         views.asignar_roles_usuario,
         name="asignar_roles_usuario",
     ),
+    path(
+        "usuarios/<int:user_id>/permisos/",
+        views.asignar_permisos_usuario,
+        name="asignar_permisos_usuario",
+    ),
+    path("roles/<int:role_id>/eliminar/", views.eliminar_rol, name="eliminar_rol"),
 
     path("perfiles/", PerfilListView.as_view(), name="perfil_lista"),
     path("perfiles/nuevo/", PerfilCreateView.as_view(), name="perfil_crear"),
@@ -67,4 +73,7 @@ urlpatterns = [
     path('jugador/mapa/', views.mapa_niveles, name='mapa_niveles'),
     path('jugador/ajustes/', views.ajustes_jugador, name='ajustes_jugador'),
     path('gestion/jugador/nivel/<int:numero_nivel>/', views.detalle_nivel, name='detalle_nivel'),
+    path('crear/', views.UsuarioCreateView.as_view(), name='crear_usuario'),
+    path('editar/<int:pk>/', views.UsuarioUpdateView.as_view(), name='editar_usuario'),
+    path('eliminar/<int:pk>/', views.UsuarioDeleteView.as_view(), name='eliminar_usuario'),
 ]
