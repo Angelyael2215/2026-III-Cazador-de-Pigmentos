@@ -19,6 +19,15 @@ MODEL_LABELS = {
     "nivel": "nivel",
 }
 
+APP_LABELS = {
+    "admin": "Administración",
+    "auth": "Autenticación y autorización",
+    "contenttypes": "Tipos de contenido",
+    "niveles": "Niveles",
+    "sessions": "Sesiones",
+    "usuarios": "Usuarios",
+}
+
 ACTION_LABELS = {
     "view": ("Ver", "Consultar la información de este tipo de registro."),
     "add": ("Crear", "Agregar registros nuevos de este tipo."),
@@ -66,6 +75,70 @@ def group_permissions_by_action(permissions):
     ]
 
 
+def group_permissions_by_app_model_action(permissions):
+    applications = {}
+    for permission in permissions:
+        app_label = permission.content_type.app_label
+        application = applications.setdefault(
+            app_label,
+            {
+                "name": APP_LABELS.get(app_label, app_label.replace("_", " ").title()),
+                "models": {},
+            },
+        )
+        model_name = MODEL_LABELS.get(
+            permission.content_type.model,
+            permission.content_type.name.lower(),
+        )
+        model_permissions = application["models"].setdefault(model_name, [])
+        model_permissions.append(permission)
+
+    return [
+        {
+            "name": application["name"],
+            "models": [
+                {
+                    "name": model_name,
+                    "categories": group_permissions_by_action(model_permissions),
+                }
+                for model_name, model_permissions in application["models"].items()
+            ],
+        }
+        for application in applications.values()
+    ]
+
+
+def search_permissions(permissions, query):
+    query = query.strip().casefold()
+    if not query:
+        return list(permissions)
+
+    matches = []
+    for permission in permissions:
+        description = describe_permission(permission)
+        app_label = permission.content_type.app_label
+        model_label = MODEL_LABELS.get(
+            permission.content_type.model,
+            permission.content_type.name.lower(),
+        )
+        searchable_values = (
+            permission.name,
+            permission.codename,
+            f"{app_label}.{permission.codename}",
+            app_label,
+            APP_LABELS.get(app_label, app_label.replace("_", " ").title()),
+            permission.content_type.model,
+            permission.content_type.name,
+            model_label,
+            description["label"],
+            description["category"],
+            description["description"],
+        )
+        if any(query in value.casefold() for value in searchable_values):
+            matches.append(permission)
+    return matches
+
+
 class PermisoLimpioField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         return describe_permission(obj)["label"]
@@ -78,18 +151,6 @@ class RegistroUsuarioForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email']
-
-
-# FORMULARIO DE PERMISOS
-class PermisoForm(forms.ModelForm):
-    class Meta:
-        model = Permission
-        fields = ['name', 'codename', 'content_type']
-        labels = {
-            'name': 'Nombre Descriptivo',
-            'codename': 'Código del Permiso',
-            'content_type': 'Modelo Asociado',
-        }
 
 
 # FORMULARIO DE ROLES
@@ -152,8 +213,10 @@ class AsignarPermisosUsuarioForm(forms.ModelForm):
         model = User
         fields = ["user_permissions"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, allow_changes=True, **kwargs):
         super().__init__(*args, **kwargs)
+        if not allow_changes:
+            self.fields["user_permissions"].disabled = True
         self.permission_categories = group_permissions_by_action(
             self.fields["user_permissions"].queryset
         )

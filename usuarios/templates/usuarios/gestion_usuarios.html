@@ -51,6 +51,8 @@
             <td>
                 {% if can_assign_roles %}
                     <a href="{% url 'asignar_roles_usuario' u.id %}" class="btn btn-edit">Asignar Roles</a>
+                {% endif %}
+                {% if can_view_user_permissions %}
                     <a href="{% url 'asignar_permisos_usuario' u.id %}" class="btn">Permisos individuales</a>
                 {% endif %}
                 {% if can_change_user %}

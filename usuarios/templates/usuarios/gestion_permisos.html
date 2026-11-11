@@ -1,40 +1,59 @@
 {% extends 'usuarios/base_admin.html' %}
 {% block content %}
-<h2>1. Gestión de Permisos</h2>
+<div class="container mt-4">
+    <h2>Catálogo de Permisos del Sistema</h2>
+    <p class="text-muted">Consulta los permisos generados por Django a partir de los modelos y migraciones. Los permisos se asignan desde los roles o desde la cuenta de un usuario.</p>
 
-{% if can_add %}
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Crear Permiso</button>
+    <form method="get" class="mb-4">
+        <label for="permission-search">Buscar por etiqueta, código técnico, modelo o aplicación</label>
+        <input
+            id="permission-search"
+            type="search"
+            name="q"
+            value="{{ query }}"
+            placeholder="Ejemplo: Ver perfil de usuario o usuarios.add_perfilusuario"
+            class="form-control"
+        >
+        <button type="submit" class="btn btn-primary">Buscar</button>
+        {% if query %}
+            <a href="{% url 'gestion_permisos' %}" class="btn btn-secondary">Limpiar búsqueda</a>
+        {% endif %}
     </form>
-{% endif %}
 
-{% if can_view %}
     <hr>
-    <h3>Lista de Permisos Registrados</h3>
-    {% for category in permission_categories %}
-        <h4>{{ category.name }}</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>Permiso</th>
-                    <th>Descripción</th>
-                    <th>Código interno</th>
-                    <th>Aplicación</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in category.permissions %}
-                <tr>
-                    <td>{{ item.label }}</td>
-                    <td>{{ item.description }}</td>
-                    <td><code>{{ item.permission.codename }}</code></td>
-                    <td>{{ item.permission.content_type.app_label }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <p>{{ permisos|length }} permiso{{ permisos|length|pluralize }} encontrado{{ permisos|length|pluralize }}.</p>
+    {% for application in permission_categories %}
+        <section class="card mb-4">
+            <h3>Aplicación: {{ application.name }}</h3>
+            {% for model in application.models %}
+                <div class="model-section">
+                    <h4>Modelo: {{ model.name }}</h4>
+                    {% for category in model.categories %}
+                        <h5>{{ category.name }}</h5>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Permiso</th>
+                                    <th scope="col">Descripción funcional</th>
+                                    <th scope="col">Código técnico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in category.permissions %}
+                                    <tr>
+                                        <td><strong>{{ item.label }}</strong></td>
+                                        <td>{{ item.description }} <span class="text-muted">({{ item.permission.name }})</span></td>
+                                        <td><code>{{ item.permission.content_type.app_label }}.{{ item.permission.codename }}</code></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </section>
+    {% empty %}
+        <p>No se encontraron permisos que coincidan con la búsqueda.</p>
     {% endfor %}
-{% endif %}
+</div>
 {% endblock %}

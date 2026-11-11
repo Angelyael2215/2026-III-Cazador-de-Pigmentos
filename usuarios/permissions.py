@@ -7,8 +7,8 @@ MANAGEMENT_SECTIONS = (
         "label": "Permisos",
         "view_permission": "auth.view_permission",
         "list_url": "gestion_permisos",
-        "add_permission": "auth.add_permission",
-        "create_url": "gestion_permisos",
+        "add_permission": None,
+        "create_url": None,
         "active_url_names": ("gestion_permisos",),
     },
     {
@@ -138,7 +138,7 @@ def get_management_sections(user):
     sections = []
     for section in MANAGEMENT_SECTIONS:
         can_view = user_has_permission(user, section["view_permission"])
-        can_add = user_has_permission(user, section["add_permission"])
+        can_add = user_has_permission(user, section["add_permission"]) if section.get("add_permission") else False
         if can_view or can_add:
             sections.append({**section, "can_view": can_view, "can_add": can_add})
     return sections
