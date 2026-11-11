@@ -1,8 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login, logout
 from django.core.exceptions import PermissionDenied
 from .forms import (
     AsignarPermisosUsuarioForm,
@@ -13,58 +11,68 @@ from .forms import (
     describe_permission,
     group_permissions_by_action,
 )
-from .models import PerfilUsuario
+from .models import PerfilUsuario, EvaluacionAccesibilidad
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth import login, logout
 from .permissions import (
     AppPermissionRequiredMixin,
     get_management_sections,
     has_management_access,
     user_has_permission,
 )
-from niveles.models import Level, LevelProgress, Player
+from niveles.models import Level, LevelProgress, Nivel, Player
 
 # FUNCIÓN DE VERIFICACIÓN
 def es_administrador(user):
     return user.is_authenticated and (user.is_superuser or user.is_staff)
 
 
-#  VISTA DE REGISTRO 
+#  VISTA DE REGISTRO
 def registro_view(request):
     if request.user.is_authenticated:
         if es_administrador(request.user):
             return redirect('dashboard_admin')
-        return render(request, 'usuarios/bienvenida_jugador.html')
-        
+        return redirect('bienvenida_jugador')
+
     if request.method == 'POST':
         form = RegistroUsuarioForm(request.POST)
         if form.is_valid():
-            usuario = form.save(commit=False)
-            usuario.save()
-           
-            PerfilUsuario.objects.create(usuario=usuario)
+            usuario = form.save()
+            PerfilUsuario.objects.get_or_create(usuario=usuario)
+            EvaluacionAccesibilidad.objects.get_or_create(
+                usuario=usuario,
+                defaults={
+                    "color_fondo_hex": "#FFFFFF",
+                    "color_texto_hex": "#000000",
+                    "ratio_contraste": 21.00,
+                    "cumple_wcag_aa": True,
+                    "cumple_wcag_aaa": True,
+                },
+            )
+            Player.objects.get_or_create(user=usuario)
             return redirect('login')
     else:
         form = RegistroUsuarioForm()
-        
+
     return render(request, 'usuarios/registro.html', {'form': form})
 
 
-#  VISTA  LOGIN 
+#  VISTA  LOGIN
 def login_view(request):
     if request.user.is_authenticated:
         if es_administrador(request.user):
             return redirect('dashboard_admin')
         return redirect('bienvenida_jugador')
-        
+
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             usuario = form.get_user()
             login(request, usuario)
-            
+
             # Si es admin, va al panel de gestión; si es jugador, a su pantalla
             if es_administrador(usuario):
                 next_url = request.GET.get('next', 'dashboard_admin')
@@ -73,7 +81,7 @@ def login_view(request):
                 return redirect('bienvenida_jugador')
     else:
         form = AuthenticationForm()
-        
+
     return render(request, 'usuarios/login.html', {'form': form})
 
 
@@ -82,10 +90,10 @@ def logout_view(request):
     return redirect('login')
 
 
-# VISTA PARA JUGADORES NORMALES 
+# VISTA PARA JUGADORES NORMALES
 @login_required
 def bienvenida_jugador(request):
-    perfil, created = PerfilUsuario.objects.get_or_create(usuario=request.user)
+    perfil, _ = PerfilUsuario.objects.get_or_create(usuario=request.user)
     player, _ = Player.objects.get_or_create(user=request.user)
     progress = {
         item.level_id: item
@@ -95,7 +103,9 @@ def bienvenida_jugador(request):
         {
             "level": level,
             "unlocked": level.number <= player.current_level_reached,
-            "completed": progress.get(level.id).completed if level.id in progress else False,
+            "completed": (
+                progress[level.id].completed if level.id in progress else False
+            ),
         }
         for level in Level.objects.filter(active=True).order_by("number")
     ]
@@ -105,12 +115,33 @@ def bienvenida_jugador(request):
         {"perfil": perfil, "player": player, "levels": levels},
     )
 
+@login_required
+def mapa_niveles(request):
+    niveles = Nivel.objects.all().order_by("numero")
+    return render(request, "usuarios/mapa.html", {"niveles": niveles})
 
-def is_admin(user):
-    return user.is_authenticated and (user.is_staff or user.is_superuser)
+@login_required
+def ajustes_jugador(request):
+    ajustes, _ = EvaluacionAccesibilidad.objects.get_or_create(
+        usuario=request.user,
+        defaults={
+            "color_fondo_hex": "#FFFFFF",
+            "color_texto_hex": "#000000",
+            "ratio_contraste": 21.00,
+            "cumple_wcag_aa": True,
+            "cumple_wcag_aaa": True,
+        },
+    )
+    if request.method == "POST":
+        ajustes.color_fondo_hex = request.POST.get("color_fondo_hex", "#FFFFFF")
+        ajustes.color_texto_hex = request.POST.get("color_texto_hex", "#000000")
+        ajustes.save()
+        return redirect("bienvenida_jugador")
+
+    return render(request, "usuarios/ajustes.html", {"ajustes": ajustes})
 
 
-# VISTAS PROTEGIDAS (SOLO ADMINISTRADORES) 
+# VISTAS PROTEGIDAS (SOLO ADMINISTRADORES)
 
 @user_passes_test(has_management_access, login_url='login')
 def dashboard_admin(request):
@@ -282,6 +313,27 @@ def asignar_roles_usuario(request, user_id):
     return render(request, 'usuarios/asignar_roles.html', {'form': form, 'usuario_obj': usuario_obj})
 
 
+@login_required
+def detalle_nivel(request, numero_nivel):
+    if numero_nivel in [1]:
+        template_name = 'niveles/nivel_arrastrar.html'
+    elif numero_nivel in [2, 5, 6, 15, 20]:
+        template_name = 'niveles/nivel_deslizadores.html'
+    elif numero_nivel in [3, 7, 16]:
+        template_name = 'niveles/nivel_rueda.html'
+    elif numero_nivel in [4, 8, 12, 17, 23]:
+        template_name = 'niveles/nivel_seleccion.html'
+    elif numero_nivel in [9, 13, 18]:
+        template_name = 'niveles/nivel_simulador.html'
+    else:  # Niveles 10, 11, 14, 19, 21, 22, 24, 25 (Jefe final / Alquimia / WCAG)
+        template_name = 'niveles/nivel_auditor.html'
+
+    context = {
+        'numero_nivel': numero_nivel,
+    }
+    return render(request, template_name, context)
+
+
 @user_passes_test(es_administrador, login_url='login')
 def asignar_permisos_usuario(request, user_id):
     usuario_obj = get_object_or_404(User, id=user_id)
@@ -328,13 +380,13 @@ class UsuarioDeleteView(LoginRequiredMixin, AppPermissionRequiredMixin, DeleteVi
     success_url = reverse_lazy('gestion_usuarios_roles')
 
 class UsuarioCreateView(LoginRequiredMixin, AppPermissionRequiredMixin, CreateView):
-    model = User 
-    form_class = UserCreationForm 
+    model = User
+    form_class = UserCreationForm
     permission_required = "auth.add_user"
     template_name = 'usuarios/crud/model_form.html'
     success_url = reverse_lazy('gestion_usuarios_roles')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['list_url'] = 'gestion_usuarios_roles' 
-        return context  
+        context['list_url'] = 'gestion_usuarios_roles'
+        return context

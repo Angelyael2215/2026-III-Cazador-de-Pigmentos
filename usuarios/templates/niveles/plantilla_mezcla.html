@@ -1,0 +1,173 @@
+{% extends 'usuarios/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .game-screen {
+        max-width: 480px;
+        margin: 0 auto;
+        background: #111d28;
+        border: 4px solid #d4af37; /* Marco dorado/bronce */
+        border-radius: 15px;
+        padding: 20px;
+        color: #fff;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        font-family: Arial, sans-serif;
+    }
+
+    .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #2c4a60;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .game-header a {
+        color: #d4af37;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .stats {
+        display: flex;
+        gap: 15px;
+        font-weight: bold;
+    }
+
+    /* Panel de Objetivo */
+    .objective-box {
+        background: #162636;
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .objective-box h3 { font-size: 0.8rem; color: #a0aec0; margin: 0 0 5px 0; letter-spacing: 1px; }
+    .objective-box h1 { font-size: 1.8rem; color: #ffd700; margin: 0 0 5px 0; text-transform: uppercase; }
+    .objective-box p { font-size: 0.9rem; color: #cbd5e0; margin: 0; }
+
+    /* Área de combinación (Matraces) */
+    .mixing-area {
+        background: #162636;
+        border: 2px solid #2c4a60;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .flasks-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .flask-slot {
+        width: 70px;
+        height: 70px;
+        background: #111d28;
+        border: 2px solid #d4af37;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: inset 0 3px 6px rgba(0,0,0,0.5);
+    }
+
+    /* Opciones de pigmentos */
+    .pigments-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 25px;
+    }
+
+    .pigment-card {
+        background: #1a2e40;
+        border: 2px solid #d4af37;
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.1s, background 0.1s;
+    }
+    .pigment-card:hover { background: #243b52; transform: translateY(-2px); }
+    .pigment-card p { margin: 5px 0 0 0; font-size: 0.85rem; font-weight: bold; }
+    .pigment-card small { color: #a0aec0; font-size: 0.75rem; }
+
+    /* Botón Comprobar estilo cofre */
+    .btn-check {
+        width: 100%;
+        background: #27ae60;
+        color: white;
+        border: 3px solid #145a32;
+        padding: 14px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 5px 0px #145a32;
+        transition: transform 0.1s;
+    }
+    .btn-check:active { transform: translateY(3px); box-shadow: 0 2px 0px #145a32; }
+</style>
+
+<div class="game-screen">
+    <div class="game-header">
+        <a href="{% url 'mapa_niveles' %}">←</a>
+        <span>Mezclas - Nivel {{ numero_nivel }}</span>
+        <div class="stats">
+            <span>❤️ 5</span>
+            <span>💎 810</span>
+        </div>
+    </div>
+
+    <div class="objective-box">
+        <h3>OBJETIVO</h3>
+        <h1>VIOLETA</h1>
+        <p>Combina azul + rojo</p>
+    </div>
+
+    <div class="mixing-area">
+        <div class="flasks-container">
+            <div class="flask-slot">⚗️</div>
+            <span style="font-size: 1.5rem; color: #d4af37;">+</span>
+            <div class="flask-slot">⚗️</div>
+        </div>
+        <p style="font-size: 0.85rem; color: #a0aec0; margin: 0;">Selecciona dos pigmentos para mezclar:</p>
+    </div>
+
+    <div class="pigments-grid">
+        <div class="pigment-card">
+            <div style="color: #3498db; font-size: 1.2rem;">🧪</div>
+            <p>Azul Cobalto</p>
+            <small>#1E88E5</small>
+        </div>
+        <div class="pigment-card">
+            <div style="color: #e74c3c; font-size: 1.2rem;">🧪</div>
+            <p>Rojo Cadmio</p>
+            <small>#E53935</small>
+        </div>
+        <div class="pigment-card">
+            <div style="color: #ffffff; font-size: 1.2rem;">🧪</div>
+            <p>Blanco Titanio</p>
+            <small>#FFFFFF</small>
+        </div>
+        <div class="pigment-card">
+            <div style="color: #2ecc71; font-size: 1.2rem;">🧪</div>
+            <p>Verde Viridián</p>
+            <small>#43A047</small>
+        </div>
+    </div>
+
+    <button class="btn-check">Comprobar</button>
+</div>
+{% endblock %}

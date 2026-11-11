@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cazadores de Pigmentos{% endblock %}</title>
+    
+    <!-- Tus estilos CSS globales -->
+    <link rel="stylesheet" href="{% static 'usuarios/css/neobrutalism.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Barra de navegación general (opcional) -->
+    <header style="padding: 20px; border-bottom: 3px solid black; background: #fff; margin-bottom: 30px;">
+        <h2 style="margin: 0; text-transform: uppercase;">🎨 Cazadores de Pigmentos</h2>
+    </header>
+
+    <!-- Contenido dinámico que cambiará según la página -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Pie de página general (opcional) -->
+    <footer style="text-align: center; margin-top: 50px; padding: 20px; font-size: 0.9rem;">
+        <p>&copy; 2026 - UTVAM / Syntaxis Lab</p>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

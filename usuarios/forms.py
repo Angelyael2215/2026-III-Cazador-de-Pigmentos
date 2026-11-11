@@ -71,7 +71,7 @@ class PermisoLimpioField(forms.ModelMultipleChoiceField):
         return describe_permission(obj)["label"]
 
 
-# FORMULARIO DE REGISTRO DE USUARIOS 
+# FORMULARIO DE REGISTRO DE USUARIOS
 class RegistroUsuarioForm(UserCreationForm):
     email = forms.EmailField(required=True, label="Correo Electrónico")
 
@@ -80,7 +80,7 @@ class RegistroUsuarioForm(UserCreationForm):
         fields = ['username', 'email']
 
 
-# FORMULARIO DE PERMISOS 
+# FORMULARIO DE PERMISOS
 class PermisoForm(forms.ModelForm):
     class Meta:
         model = Permission
@@ -92,7 +92,7 @@ class PermisoForm(forms.ModelForm):
         }
 
 
-# FORMULARIO DE ROLES 
+# FORMULARIO DE ROLES
 class RolForm(forms.ModelForm):
     permissions = PermisoLimpioField(
         queryset=Permission.objects.select_related("content_type").all(),
@@ -125,7 +125,7 @@ class RolForm(forms.ModelForm):
             self.selected_permissions = set()
 
 
-# FORMULARIO DE ASIGNACIÓN DE ROLES 
+# FORMULARIO DE ASIGNACIÓN DE ROLES
 class AsignarRolUsuarioForm(forms.ModelForm):
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
