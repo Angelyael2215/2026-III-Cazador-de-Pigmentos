@@ -4,6 +4,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.test import Client, TestCase
 
+from .forms import (
+    group_permissions_by_app_model_action,
+    search_permissions,
+)
 from .models import EvaluacionAccesibilidad, PerfilUsuario
 from .permissions import get_management_sections, has_management_access
 from .views import es_administrador
@@ -310,6 +314,142 @@ class ProfilePermissionTests(TestCase):
         self.assertContains(response, "Editar")
         self.assertContains(response, "Eliminar")
         self.assertContains(response, "Ver perfil de usuario")
+        self.assertContains(response, "Aplicación: Usuarios")
+        self.assertContains(response, "Modelo: perfil de usuario")
+        self.assertContains(response, "usuarios.view_perfilusuario")
+
+    def test_permission_catalog_searches_label_codename_and_application(self):
+        admin = get_user_model().objects.create_user(
+            username="permission-search-admin",
+            password="test-password",
+            is_staff=True,
+        )
+        self.client.force_login(admin)
+
+        by_label = self.client.get(
+            "/gestion/permisos/",
+            {"q": "Ver perfil de usuario"},
+        )
+        self.assertEqual(by_label.status_code, 200)
+        self.assertContains(by_label, "usuarios.view_perfilusuario")
+        self.assertNotContains(by_label, "auth.view_user")
+
+        by_codename = self.client.get(
+            "/gestion/permisos/",
+            {"q": "usuarios.add_perfilusuario"},
+        )
+        self.assertContains(by_codename, "usuarios.add_perfilusuario")
+        self.assertNotContains(by_codename, "usuarios.view_perfilusuario")
+
+        rejected_post = self.client.post(
+            "/gestion/permisos/",
+            {"name": "permiso-inconsistente"},
+        )
+        self.assertEqual(rejected_post.status_code, 405)
+
+        by_application = self.client.get(
+            "/gestion/permisos/",
+            {"q": "Autenticación y autorización"},
+        )
+        self.assertContains(by_application, "auth.view_user")
+        self.assertNotContains(by_application, "usuarios.view_perfilusuario")
+
+    def test_permission_catalog_helpers_group_by_application_model_and_action(self):
+        permissions = Permission.objects.filter(
+            content_type__app_label="usuarios",
+            content_type__model="perfilusuario",
+        ).select_related("content_type")
+
+        grouped = group_permissions_by_app_model_action(permissions)
+
+        self.assertEqual(len(grouped), 1)
+        self.assertEqual(grouped[0]["name"], "Usuarios")
+        self.assertEqual(grouped[0]["models"][0]["name"], "perfil de usuario")
+        self.assertEqual(
+            [category["name"] for category in grouped[0]["models"][0]["categories"]],
+            ["Ver", "Crear", "Editar", "Eliminar", "Especiales"],
+        )
+        self.assertEqual(
+            len(search_permissions(permissions, "Ver perfil de usuario")),
+            1,
+        )
+
+    def test_view_user_permission_can_read_but_not_change_individual_permissions(self):
+        reader = get_user_model().objects.create_user(
+            username="individual-permission-reader",
+            password="test-password",
+        )
+        role = Group.objects.create(name="individual-permission-reader-role")
+        role.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="auth",
+                codename="view_user",
+            )
+        )
+        reader.groups.add(role)
+        target = get_user_model().objects.create_user(username="permission-target")
+        current_permission = Permission.objects.get(
+            content_type__app_label="usuarios",
+            codename="view_perfilusuario",
+        )
+        submitted_permission = Permission.objects.get(
+            content_type__app_label="auth",
+            codename="view_group",
+        )
+        target.user_permissions.add(current_permission)
+        self.client.force_login(reader)
+
+        page = self.client.get(
+            f"/gestion/usuarios/{target.pk}/permisos/"
+        )
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "solo lectura")
+        self.assertContains(page, "disabled")
+        self.assertNotContains(page, "Guardar permisos individuales")
+
+        denied = self.client.post(
+            f"/gestion/usuarios/{target.pk}/permisos/",
+            {"user_permissions": [submitted_permission.pk]},
+        )
+        self.assertEqual(denied.status_code, 403)
+        target.refresh_from_db()
+        self.assertQuerySetEqual(
+            target.user_permissions.all(),
+            [current_permission],
+        )
+
+    def test_change_user_permission_can_assign_individual_permissions(self):
+        editor = get_user_model().objects.create_user(
+            username="individual-permission-editor",
+            password="test-password",
+        )
+        role = Group.objects.create(name="individual-permission-editor-role")
+        role.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="auth",
+                codename="change_user",
+            )
+        )
+        editor.groups.add(role)
+        target = get_user_model().objects.create_user(username="permission-edit-target")
+        permission = Permission.objects.get(
+            content_type__app_label="usuarios",
+            codename="view_perfilusuario",
+        )
+        self.client.force_login(editor)
+
+        response = self.client.post(
+            f"/gestion/usuarios/{target.pk}/permisos/",
+            {"user_permissions": [permission.pk]},
+        )
+
+        self.assertRedirects(
+            response,
+            "/gestion/usuarios/",
+            fetch_redirect_response=False,
+        )
+        target.refresh_from_db()
+        self.assertQuerySetEqual(target.user_permissions.all(), [permission])
 
     def test_inactive_accounts_never_get_management_access(self):
         inactive_staff = get_user_model().objects.create_user(

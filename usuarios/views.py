@@ -3,17 +3,16 @@ from django.http import HttpResponseNotAllowed
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
-from django.contrib.auth.forms import SetPasswordForm
+from django.views.decorators.http import require_GET
 from .forms import (
     AsignarPermisosUsuarioForm,
     RolForm,
     AsignarRolUsuarioForm,
-    PermisoForm,
+
     RegistroUsuarioForm,
     describe_permission,
-    group_permissions_by_app_and_action,
-    group_permissions_by_action,
+    group_permissions_by_app_model_action,
+    search_permissions,
 )
 from .models import PerfilUsuario, EvaluacionAccesibilidad
 from django.urls import reverse_lazy
@@ -26,6 +25,7 @@ from .permissions import (
     user_has_permission,
 )
 from niveles.models import Level, LevelProgress, Nivel, Player
+from django.db import models
 
 # FUNCIÓN DE VERIFICACIÓN
 def es_administrador(user):
@@ -141,31 +141,26 @@ def dashboard_admin(request):
 
 
 @user_passes_test(
-    lambda user: user_has_permission(user, "auth.view_permission")
-    or user_has_permission(user, "auth.add_permission"),
+    lambda user: user_has_permission(user, "auth.view_permission"),
     login_url='login',
 )
+@require_GET
 def gestion_permisos(request):
-    can_view = user_has_permission(request.user, "auth.view_permission")
-    permisos = Permission.objects.none()
-    if can_view:
-        permisos = Permission.objects.all().select_related('content_type').order_by('content_type__app_label', 'id')
-    can_add = user_has_permission(request.user, "auth.add_permission")
-    if request.method == 'POST' and not can_add:
-        raise PermissionDenied
-    form = PermisoForm(request.POST or None) if can_add else None
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('gestion_permisos')
+    permisos = Permission.objects.select_related("content_type").order_by(
+        "content_type__app_label",
+        "content_type__model",
+        "codename",
+    )
+    query = request.GET.get('q', '').strip()
+    permisos = search_permissions(permisos, query)
+
     return render(
         request,
         'usuarios/gestion_permisos.html',
         {
             'permisos': permisos,
-            'permission_categories': group_permissions_by_action(permisos),
-            'form': form,
-            'can_add': can_add,
-            'can_view': can_view,
+            'permission_categories': group_permissions_by_app_model_action(permisos),
+            'query': query,
         },
     )
 
@@ -302,14 +297,11 @@ def gestion_usuarios_roles(request):
             'can_add_user': user_has_permission(request.user, "auth.add_user"),
             'can_change_user': user_has_permission(request.user, "auth.change_user"),
             'can_delete_user': user_has_permission(request.user, "auth.delete_user"),
-            'can_assign_roles': (
-                user_has_permission(request.user, "auth.change_user")
-                and user_has_permission(request.user, "auth.change_group")
+            'can_assign_roles': es_administrador(request.user),
+            'can_view_user_permissions': (
+                user_has_permission(request.user, "auth.view_user")
+                or user_has_permission(request.user, "auth.change_user")
             ),
-            'search_query': search_query,
-            'status_filter': status_filter,
-            'role_filter': role_filter,
-            'roles': Group.objects.order_by("name"),
         },
     )
 
@@ -349,12 +341,21 @@ def detalle_nivel(request, numero_nivel):
     return render(request, template_name, context)
 
 
-@user_passes_test(es_administrador, login_url='login')
+@user_passes_test(
+    lambda user: user_has_permission(user, "auth.view_user")
+    or user_has_permission(user, "auth.change_user"),
+    login_url='login',
+)
 def asignar_permisos_usuario(request, user_id):
+    can_change = user_has_permission(request.user, "auth.change_user")
+    if request.method == 'POST' and not can_change:
+        raise PermissionDenied
+
     usuario_obj = get_object_or_404(User, id=user_id)
     form = AsignarPermisosUsuarioForm(
         request.POST or None,
         instance=usuario_obj,
+        allow_changes=can_change,
     )
     if request.method == 'POST' and form.is_valid():
         form.save()
@@ -362,7 +363,11 @@ def asignar_permisos_usuario(request, user_id):
     return render(
         request,
         'usuarios/asignar_permisos_usuario.html',
-        {'form': form, 'usuario_obj': usuario_obj},
+        {
+            'form': form,
+            'usuario_obj': usuario_obj,
+            'can_change': can_change,
+        },
     )
 
 @user_passes_test(

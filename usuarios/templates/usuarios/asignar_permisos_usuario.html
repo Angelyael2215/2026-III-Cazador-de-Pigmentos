@@ -2,6 +2,7 @@
 {% block content %}
 <h2>Permisos individuales de {{ usuario_obj.username }}</h2>
 <p>Estos permisos se asignan solo a esta cuenta. No modifican los permisos de sus roles ni los de otros usuarios.</p>
+<p>Los permisos de los roles y los permisos individuales se suman. Para quitar acceso concedido por un rol, cambia la asignación del rol.</p>
 <style>
     .permission-category { margin: 16px 0; padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; }
     .permission-option { display: block; margin: 8px 0; }
@@ -19,6 +20,7 @@
                     <input type="checkbox" name="user_permissions"
                            value="{{ option.permission.pk }}"
                            id="id_user_permissions_{{ option.permission.pk }}"
+                           {% if not can_change %}disabled{% endif %}
                            {% if option.permission.pk|stringformat:"s" in form.selected_permissions %}checked{% endif %}>
                     <strong>{{ option.label }}</strong>
                     <small>{{ option.description }} Código: {{ option.permission.codename }}</small>
@@ -26,7 +28,11 @@
             {% endfor %}
         </fieldset>
     {% endfor %}
-    <button type="submit" class="btn">Guardar permisos individuales</button>
+    {% if can_change %}
+        <button type="submit" class="btn">Guardar permisos individuales</button>
+    {% else %}
+        <p role="status">Tienes acceso de solo lectura a estos permisos.</p>
+    {% endif %}
     <a href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
 </form>
 {% endblock %}
