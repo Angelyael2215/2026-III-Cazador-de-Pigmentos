@@ -86,17 +86,20 @@
                         <td>
                             {% for app in rol.permission_groups %}
                                 <details>
-                                    <summary>{{ app.application }}</summary>
-                                    {% for category in app.categories %}
-                                        <strong>{{ category.name }}</strong>
-                                        <ul>
-                                            {% for permission in category.permissions %}
-                                                <li title="{{ permission.description }}">
-                                                    {{ permission.label }}
-                                                    <small>({{ permission.permission.codename }})</small>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
+                                    <summary>{{ app.name }}</summary>
+                                    {% for model in app.models %}
+                                        <h5>{{ model.name }}</h5>
+                                        {% for category in model.categories %}
+                                            <strong>{{ category.name }}</strong>
+                                            <ul>
+                                                {% for permission in category.permissions %}
+                                                    <li title="{{ permission.description }}">
+                                                        {{ permission.label }}
+                                                        <small>({{ permission.permission.content_type.app_label }}.{{ permission.permission.codename }})</small>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endfor %}
                                     {% endfor %}
                                 </details>
                             {% empty %}
