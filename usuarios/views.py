@@ -15,8 +15,7 @@ from .models import PerfilUsuario, EvaluacionAccesibilidad
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.contrib.auth import login, logout
+from django.contrib.auth.forms import UserCreationForm
 from .permissions import (
     AppPermissionRequiredMixin,
     get_management_sections,
@@ -58,36 +57,6 @@ def registro_view(request):
         form = RegistroUsuarioForm()
 
     return render(request, 'usuarios/registro.html', {'form': form})
-
-
-#  VISTA  LOGIN
-def login_view(request):
-    if request.user.is_authenticated:
-        if es_administrador(request.user):
-            return redirect('dashboard_admin')
-        return redirect('bienvenida_jugador')
-
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            usuario = form.get_user()
-            login(request, usuario)
-
-            # Si es admin, va al panel de gestión; si es jugador, a su pantalla
-            if es_administrador(usuario):
-                next_url = request.GET.get('next', 'dashboard_admin')
-                return redirect(next_url)
-            else:
-                return redirect('bienvenida_jugador')
-    else:
-        form = AuthenticationForm()
-
-    return render(request, 'usuarios/login.html', {'form': form})
-
-
-def logout_view(request):
-    logout(request)
-    return redirect('login')
 
 
 # VISTA PARA JUGADORES NORMALES
