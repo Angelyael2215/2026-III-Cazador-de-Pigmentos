@@ -1,51 +1,116 @@
 {% extends 'usuarios/base_admin.html' %}
+
 {% block content %}
-<h2>3. Gestión de Usuarios y sus Permisos Efectivos</h2>
+<h2>Gestión de usuarios y permisos</h2>
+
 {% if can_add_user %}
-    <div style ="margin-bottom: 15px;">
-        <a href="{%url 'crear_usuario' %}" class="btn" style="background-color: #28a745; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px;"> Nuevo Usuario</a>
-    </div>
+    <p>
+        <a href="{% url 'crear_usuario' %}" class="btn">Crear usuario</a>
+    </p>
 {% endif %}
+
 {% if can_view_user %}
-<table>
-    <thead>
-        <tr>
-            <th>Usuario</th>
-            <th>Email</th>
-            <th>Roles Asignados</th>
-            <th>Permisos efectivos (rol e individuales)</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for u in usuarios %}
-        <tr>
-            <td><strong>{{ u.username }}</strong></td>
-            <td>{{ u.email }}</td>
-            <td>
-                {% for r in u.groups.all %}
-                    <span style="background: #3498db; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;">
-                        {{ r.name }}
-                    </span>
+    <form method="get" class="user-filters" role="search" aria-label="Buscar y filtrar usuarios">
+        <label for="user-search">Usuario o correo</label>
+        <input
+            type="search"
+            id="user-search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Buscar por nombre o correo"
+        >
+
+        <label for="user-status">Estado</label>
+        <select id="user-status" name="estado">
+            <option value="">Todos</option>
+            <option value="activo" {% if status_filter == "activo" %}selected{% endif %}>Activos</option>
+            <option value="inactivo" {% if status_filter == "inactivo" %}selected{% endif %}>Inactivos</option>
+        </select>
+
+        <label for="user-role">Rol</label>
+        <select id="user-role" name="rol">
+            <option value="">Todos los roles</option>
+            {% for role in roles %}
+                <option value="{{ role.pk }}" {% if role_filter == role.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ role.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn">Aplicar filtros</button>
+        <a href="{% url 'gestion_usuarios_roles' %}">Limpiar</a>
+    </form>
+
+    <div class="table-responsive" style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Correo</th>
+                    <th scope="col">Fecha de alta</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Roles asignados</th>
+                    <th scope="col">Permisos efectivos</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                    <tr>
+                        <td><strong>{{ u.username }}</strong></td>
+                        <td>{{ u.email|default:"—" }}</td>
+                        <td>{{ u.date_joined|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if u.is_active %}
+                                <span>Activo</span>
+                            {% else %}
+                                <span>Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for role in u.groups.all %}
+                                <span>{{ role.name }}</span>{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                <em>Sin rol</em>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if u.is_superuser or u.is_staff %}
+                                <span>Acceso de administración (staff/superusuario)</span>
+                            {% endif %}
+                            {% for permission in u.effective_permissions %}
+                                <span title="{{ permission.description }} — {{ permission.sources }}">
+                                    {{ permission.label }} ({{ permission.sources }})
+                                </span>{% if not forloop.last %}; {% endif %}
+                            {% empty %}
+                                {% if not u.is_staff and not u.is_superuser %}
+                                    <span>Sin permisos asignados</span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if can_assign_roles %}
+                                <a href="{% url 'asignar_roles_usuario' u.id %}">Asignar roles</a>
+                                <a href="{% url 'asignar_permisos_usuario' u.id %}">Permisos individuales</a>
+                            {% endif %}
+                            {% if can_change_user %}
+                                <a href="{% url 'editar_usuario' u.id %}">Editar</a>
+                                <a href="{% url 'cambiar_contrasena_usuario' u.id %}">Cambiar contraseña</a>
+                                {% if u.is_active %}
+                                    <a href="{% url 'estado_usuario' u.id 'desactivar' %}">Desactivar</a>
+                                {% else %}
+                                    <a href="{% url 'estado_usuario' u.id 'activar' %}">Activar</a>
+                                {% endif %}
+                            {% endif %}
+                            {% if can_delete_user %}
+                                <a href="{% url 'eliminar_usuario' u.id %}">Eliminar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
                 {% empty %}
-                    <em style="color: #7f8c8d;">Sin rol (Jugador Básico)</em>
-                {% endfor %}
-            </td>
-            <td>
-                {% if u.is_superuser or u.is_staff %}
-                    <span style="background: #dff0d8; color: #245b2a; padding: 2px 5px; border-radius: 3px;">
-                        Acceso de administrador
-                    </span>
-                {% endif %}
-                {% for permission in u.effective_permissions %}
-                    <span title="{{ permission.description }} — {{ permission.sources }}"
-                          style="background: #eef2f5; color: #2c3e50; padding: 2px 5px; border-radius: 3px; font-size: 0.8em; display: inline-block; margin: 2px;">
-                        {{ permission.label }} <small>({{ permission.sources }})</small>
-                    </span>
-                {% empty %}
-                    {% if not u.is_staff and not u.is_superuser %}
-                        <span style="color: #95a5a6; font-size: 0.85em;">Sin permisos asignados</span>
-                    {% endif %}
+                    <tr>
+                        <td colspan="7">No hay usuarios que coincidan con los filtros.</td>
+                    </tr>
                 {% endfor %}
             </td>
             <td>

@@ -1,0 +1,15 @@
+{% extends 'usuarios/base_admin.html' %}
+
+{% block content %}
+<h2>Confirmar eliminación del rol</h2>
+<p>¿Deseas eliminar el rol <strong>{{ rol.name }}</strong>?</p>
+<p>
+    Se eliminará el grupo y dejará de aplicar sus permisos. Las cuentas de
+    usuario no se eliminarán; simplemente perderán la asignación a este rol.
+</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn">Eliminar rol</button>
+    <a href="{% url 'gestion_roles' %}">Cancelar</a>
+</form>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'usuarios/base_admin.html' %}
+
+{% block content %}
+<h2>{% if accion == "desactivar" %}Desactivar cuenta{% else %}Activar cuenta{% endif %}</h2>
+<p>
+    {% if accion == "desactivar" %}
+        ¿Confirmas que deseas desactivar la cuenta de <strong>{{ usuario_obj.username }}</strong>?
+        El usuario ya no podrá iniciar sesión hasta que la cuenta vuelva a activarse.
+    {% else %}
+        ¿Confirmas que deseas activar la cuenta de <strong>{{ usuario_obj.username }}</strong>?
+        El usuario podrá volver a iniciar sesión.
+    {% endif %}
+</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn">
+        {% if accion == "desactivar" %}Confirmar desactivación{% else %}Confirmar activación{% endif %}
+    </button>
+    <a href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+</form>
+{% endblock %}
