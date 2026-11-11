@@ -113,3 +113,21 @@ class UsuarioLogro(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username} - {self.logro.nombre_logro}"
+
+class ModuloTeorico(models.Model):
+    titulo = models.CharField(max_length=100) # Ej: "Módulo Especial: El Código Oculto"
+    orden = models.IntegerField(unique=True)
+    descripcion = models.TextField()
+
+    def __str__(self):
+        return f"{self.orden}. {self.titulo}"
+
+
+
+class SesionNivel(models.Model):
+    perfil = models.ForeignKey('usuarios.PerfilUsuario', on_delete=models.CASCADE, related_name='sesiones')
+    nivel = models.ForeignKey(Nivel, on_delete=models.CASCADE)
+    completado = models.BooleanField(default=False)
+    puntaje_obtenido = models.IntegerField(default=0)
+    intentos = models.IntegerField(default=1)
+    fecha_superado = models.DateTimeField(auto_now=True)

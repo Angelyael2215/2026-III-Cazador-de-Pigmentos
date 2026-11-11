@@ -22,7 +22,7 @@ class PerfilUsuario(models.Model):
 
     @property
     def tiene_vidas(self):
-        return self.vidas > 0 
+        return self.vidas > 0
 
     @property
     def jugador_avanzado(self):
@@ -52,7 +52,7 @@ class EvaluacionAccesibilidad(models.Model):
     def __str__(self):
         return f"Evaluación {self.id} de {self.usuario.username}"
 
-    # solo lectura 
+    # solo lectura
 
     @property
     def nivel_aprobacion(self):
