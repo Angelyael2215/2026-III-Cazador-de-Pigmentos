@@ -1,0 +1,49 @@
+{% extends "usuarios/base_admin.html" %}
+
+{% block content %}
+<h1>Niveles del juego</h1>
+<p>Desde aquí creas y mantienes los retos que aparecerán en el perfil de los jugadores.</p>
+{% if can_add %}
+    <p><a class="btn" href="{% url 'niveles_juego_crear' %}">Crear nivel</a></p>
+{% endif %}
+
+{% if messages %}
+    {% for message in messages %}
+        <p role="status">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+{% if levels %}
+    <table>
+        <thead>
+            <tr>
+                <th>Número</th>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for level in levels %}
+                <tr>
+                    <td>{{ level.number }}</td>
+                    <td>{{ level.title }}</td>
+                    <td>{{ level.get_kind_display }}</td>
+                    <td>{% if level.active %}Activo{% else %}Inactivo{% endif %}</td>
+                    <td>
+                        {% if can_change %}
+                            <a class="btn btn-edit" href="{% url 'niveles_juego_editar' level.pk %}">Editar</a>
+                        {% endif %}
+                        {% if can_delete %}
+                            <a class="btn" href="{% url 'niveles_juego_eliminar' level.pk %}">Eliminar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Aún no hay niveles. Crea el primero para que los jugadores puedan empezar.</p>
+{% endif %}
+{% endblock %}

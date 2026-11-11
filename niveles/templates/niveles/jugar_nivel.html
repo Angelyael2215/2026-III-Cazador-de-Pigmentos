@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nivel {{ level.number }} · Cazadores de Pigmentos</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a252f; color: white; margin: 0; padding: 32px 16px; }
+        main { max-width: 720px; margin: auto; background: #2c3e50; padding: 28px; border-radius: 10px; }
+        a { color: #9bd4ff; }
+        .instruction, .feedback { background: #34495e; padding: 14px; border-radius: 8px; }
+        .feedback { margin: 12px 0; }
+        .feedback.success { background: #215b43; }
+        .feedback.error { background: #793b3b; }
+        fieldset { border: 1px solid #718096; border-radius: 8px; margin: 18px 0; padding: 16px; }
+        label.choice { display: flex; align-items: center; gap: 10px; padding: 10px; margin: 8px 0; background: #34495e; border-radius: 6px; }
+        .swatch { display: inline-block; width: 28px; height: 28px; border-radius: 5px; border: 1px solid #fff8; }
+        input[type=number], select { padding: 8px; border-radius: 5px; border: 0; }
+        .rgb-fields { display: flex; flex-wrap: wrap; gap: 12px; }
+        .rgb-fields label { display: grid; gap: 6px; }
+        button { background: #27ae60; color: white; border: 0; border-radius: 5px; padding: 11px 18px; font-weight: bold; cursor: pointer; }
+        .order-list { list-style: none; padding: 0; }
+        .order-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #34495e; margin: 8px 0; padding: 10px; border-radius: 6px; }
+        .order-list button { padding: 7px 10px; margin-left: 4px; background: #49627c; }
+    </style>
+</head>
+<body>
+<main>
+    <a href="{% url 'bienvenida_jugador' %}">← Volver a mis niveles</a>
+    <h1>Nivel {{ level.number }}: {{ level.title }}</h1>
+    <p class="instruction">{{ level.instruction }}</p>
+
+    {% for message in messages %}
+        <p class="feedback {{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+    {% if progress %}
+        <p>Intentos: {{ progress.attempts }}{% if progress.completed %} · Nivel completado{% endif %}</p>
+    {% endif %}
+
+    <form method="post" id="answer-form">
+        {% csrf_token %}
+        <input type="hidden" name="answer" id="answer">
+
+        {% if level.kind == "rgb" %}
+            <fieldset>
+                <legend>Mezcla el color con los canales RGB</legend>
+                <div class="rgb-fields">
+                    <label>Rojo <input type="number" min="0" max="255" value="0" data-rgb></label>
+                    <label>Verde <input type="number" min="0" max="255" value="0" data-rgb></label>
+                    <label>Azul <input type="number" min="0" max="255" value="0" data-rgb></label>
+                </div>
+            </fieldset>
+        {% elif level.kind == "mix" %}
+            <fieldset>
+                <legend>Selecciona los colores de la mezcla</legend>
+                {% for color in colors %}
+                    <label class="choice">
+                        <input type="checkbox" value="{{ color }}" data-mix-color>
+                        <span class="swatch" style="background-color: {{ color }}"></span>{{ color }}
+                    </label>
+                {% empty %}
+                    <p>Este nivel necesita una lista de colores en el campo <code>data.colors</code>.</p>
+                {% endfor %}
+            </fieldset>
+        {% elif level.kind == "temperature" %}
+            <fieldset>
+                <legend>Clasifica cada color como cálido o frío</legend>
+                {% for color in colors %}
+                    <div class="choice" data-temperature-color="{{ color }}">
+                        <span class="swatch" style="background-color: {{ color }}"></span>{{ color }}
+                        <label><input type="radio" name="temperature-{{ forloop.counter }}" value="warm"> Cálido</label>
+                        <label><input type="radio" name="temperature-{{ forloop.counter }}" value="cold"> Frío</label>
+                    </div>
+                {% empty %}
+                    <p>Este nivel necesita una lista de colores en el campo <code>data.colors</code>.</p>
+                {% endfor %}
+            </fieldset>
+        {% elif level.kind == "saturation" %}
+            <fieldset>
+                <legend>Ordena los colores de menor a mayor saturación</legend>
+                <p>Usa las flechas para cambiar el orden.</p>
+                <ol class="order-list" id="color-order">
+                    {% for color in colors %}
+                        <li data-order-color="{{ color }}">
+                            <span><span class="swatch" style="background-color: {{ color }}"></span> {{ color }}</span>
+                            <span>
+                                <button type="button" data-move="up" aria-label="Mover arriba">↑</button>
+                                <button type="button" data-move="down" aria-label="Mover abajo">↓</button>
+                            </span>
+                        </li>
+                    {% empty %}
+                        <li>Este nivel necesita una lista de colores en <code>data.colors</code>.</li>
+                    {% endfor %}
+                </ol>
+            </fieldset>
+        {% else %}
+            <fieldset>
+                <legend>Elige una opción</legend>
+                {% for option in level.data.options %}
+                    <label class="choice">
+                        <input type="radio" name="option" value="{{ option.id }}" required>
+                        {% if option.color %}<span class="swatch" style="background-color: {{ option.color }}"></span>{% endif %}
+                        {{ option.label|default:option.id }}
+                    </label>
+                {% empty %}
+                    <p>Este nivel necesita opciones en el campo <code>data.options</code>.</p>
+                {% endfor %}
+            </fieldset>
+        {% endif %}
+
+        <button type="submit">Enviar respuesta</button>
+    </form>
+</main>
+<script>
+    document.getElementById("answer-form").addEventListener("submit", function (event) {
+        const answer = {};
+        const kind = "{{ level.kind }}";
+
+        if (kind === "rgb") {
+            answer.rgb = Array.from(document.querySelectorAll("[data-rgb]"), (input) => Number(input.value));
+        } else if (kind === "mix") {
+            answer.colors = Array.from(document.querySelectorAll("[data-mix-color]:checked"), (input) => input.value);
+        } else if (kind === "temperature") {
+            answer.warm = [];
+            answer.cold = [];
+            for (const item of document.querySelectorAll("[data-temperature-color]")) {
+                const selected = item.querySelector("input:checked");
+                if (!selected) {
+                    event.preventDefault();
+                    alert("Clasifica todos los colores antes de enviar.");
+                    return;
+                }
+                answer[selected.value].push(item.dataset.temperatureColor);
+            }
+        } else if (kind === "saturation") {
+            answer.order = Array.from(document.querySelectorAll("[data-order-color]"), (item) => item.dataset.orderColor);
+        } else {
+            const selected = document.querySelector('input[name="option"]:checked');
+            if (!selected) {
+                event.preventDefault();
+                alert("Selecciona una opción antes de enviar.");
+                return;
+            }
+            answer.option_id = selected.value;
+        }
+
+        document.getElementById("answer").value = JSON.stringify(answer);
+    });
+
+    const colorOrder = document.getElementById("color-order");
+    if (colorOrder) {
+        colorOrder.addEventListener("click", function (event) {
+            const direction = event.target.dataset.move;
+            if (!direction) return;
+            const item = event.target.closest("li");
+            if (direction === "up" && item.previousElementSibling) {
+                item.parentNode.insertBefore(item, item.previousElementSibling);
+            } else if (direction === "down" && item.nextElementSibling) {
+                item.parentNode.insertBefore(item.nextElementSibling, item);
+            }
+        });
+    }
+</script>
+</body>
+</html>

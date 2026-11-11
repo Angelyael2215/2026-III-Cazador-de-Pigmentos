@@ -4,27 +4,69 @@
     <meta charset="UTF-8">
     <title>Perfil de Cazador</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #1a252f; color: white; margin: 0; padding: 40px; display: flex; justify-content: center; }
-        .card { background: #2c3e50; padding: 30px; border-radius: 10px; width: 350px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        body { font-family: Arial, sans-serif; background: #1a252f; color: white; margin: 0; padding: 40px 20px; }
+        .layout { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 350px) 1fr; gap: 24px; align-items: start; }
+        .card, .levels { background: #2c3e50; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .card { text-align: center; }
         .stats { background: #34495e; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; }
         .btn-logout { background: #e74c3c; color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
+        .level-list { display: grid; gap: 12px; }
+        .level { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; background: #34495e; border-radius: 8px; }
+        .level h3, .level p { margin: 0 0 6px; }
+        .level p { color: #d7e1eb; }
+        .btn-play { background: #27ae60; color: white; padding: 9px 14px; text-decoration: none; border-radius: 5px; font-weight: bold; white-space: nowrap; }
+        .btn-locked { color: #c6d0da; }
+        .empty { color: #d7e1eb; line-height: 1.5; }
+        .admin-link { color: #9bd4ff; }
+        @media (max-width: 700px) { .layout { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>¡Hola, {{ request.user.username }}! 🎮</h1>
-        <p>Bienvenido a <strong>Cazadores de Pigmentos</strong>.</p>
-        
-        <div class="stats">
-            <p>❤️ <strong>Vidas:</strong> {{ perfil.vidas }}</p>
-            <p>💎 <strong>Gemas:</strong> {{ perfil.gemas }}</p>
-            <p>⭐ <strong>Nivel Máximo:</strong> {{ perfil.nivel_maximo_desbloqueado }}</p>
-        </div>
+    <main class="layout">
+        <section class="card">
+            <h1>¡Hola, {{ request.user.username }}! 🎮</h1>
+            <p>Bienvenido a <strong>Cazadores de Pigmentos</strong>.</p>
 
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="btn-logout">Cerrar Sesión</button>
-        </form>
-    </div>
+            <div class="stats">
+                <p>❤️ <strong>Vidas:</strong> {{ perfil.vidas }}</p>
+                <p>💎 <strong>Gemas:</strong> {{ perfil.gemas }}</p>
+                <p>⭐ <strong>Nivel máximo:</strong> {{ perfil.nivel_maximo_desbloqueado }}</p>
+                <p>✨ <strong>Experiencia:</strong> {{ player.xp }} XP</p>
+            </div>
+
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout">Cerrar sesión</button>
+            </form>
+        </section>
+
+        <section class="levels">
+            <h2>Mis niveles</h2>
+            {% if levels %}
+                <div class="level-list">
+                    {% for item in levels %}
+                        <article class="level">
+                            <div>
+                                <h3>Nivel {{ item.level.number }}: {{ item.level.title }}</h3>
+                                <p>{{ item.level.get_kind_display }}{% if item.completed %} · Completado{% endif %}</p>
+                            </div>
+                            {% if item.unlocked %}
+                                <a class="btn-play" href="{% url 'jugar_nivel' item.level.number %}">
+                                    {% if item.completed %}Volver a jugar{% else %}Jugar{% endif %}
+                                </a>
+                            {% else %}
+                                <span class="btn-locked">🔒 Bloqueado</span>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty">Todavía no hay niveles activos para jugar.</p>
+                {% if request.user.is_staff %}
+                    <a class="admin-link" href="{% url 'niveles_juego_crear' %}">Crear niveles desde el panel de administración</a>
+                {% endif %}
+            {% endif %}
+        </section>
+    </main>
 </body>
 </html>

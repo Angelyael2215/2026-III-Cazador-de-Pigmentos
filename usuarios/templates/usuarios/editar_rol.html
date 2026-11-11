@@ -1,10 +1,32 @@
 {% extends 'usuarios/base_admin.html' %}
 {% block content %}
 <h2>Editar Rol: {{ rol.name }}</h2>
+<style>
+    .permission-category { margin: 16px 0; padding: 12px; border: 1px solid #dee2e6; border-radius: 6px; }
+    .permission-option { display: block; margin: 8px 0; }
+    .permission-option small { color: #5b6570; }
+</style>
 
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form.name.label_tag }} {{ form.name }} {{ form.name.errors }}
+    <h3>{{ form.permissions.label }}</h3>
+    {{ form.permissions.errors }}
+    {% for category in form.permission_categories %}
+        <fieldset class="permission-category">
+            <legend>{{ category.name }}</legend>
+            {% for option in category.permissions %}
+                <label class="permission-option">
+                    <input type="checkbox" name="permissions"
+                           value="{{ option.permission.pk }}"
+                           id="id_permissions_{{ option.permission.pk }}"
+                           {% if option.permission.pk|stringformat:"s" in form.selected_permissions %}checked{% endif %}>
+                    <strong>{{ option.label }}</strong>
+                    <small>{{ option.description }} Código: {{ option.permission.codename }}</small>
+                </label>
+            {% endfor %}
+        </fieldset>
+    {% endfor %}
     <button type="submit" class="btn">Guardar Cambios</button>
     <a href="{% url 'gestion_roles' %}">Cancelar</a>
 </form>
