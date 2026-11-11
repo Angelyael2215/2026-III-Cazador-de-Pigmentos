@@ -1,36 +1,47 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro - Cazadores de Pigmentos</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #2c3e50; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; box-sizing: border-box; }
-        .contenedor-registro { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 360px; }
-        .contenedor-registro h2 { margin-top: 0; color: #2c3e50; text-align: center; font-size: 1.4em; }
-        .contenedor-registro form p { margin-bottom: 12px; }
-        .contenedor-registro input[type="text"], 
-        .contenedor-registro input[type="email"], 
-        .contenedor-registro input[type="password"] { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        .helptext { display: block; font-size: 0.75em; color: #666; margin-top: 3px; }
-        .contenedor-registro button { width: 100%; background: #27ae60; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 15px; }
-        .contenedor-registro button:hover { background: #219150; }
-        .login-link { text-align: center; margin-top: 15px; font-size: 0.9em; }
-        .login-link a { color: #2980b9; text-decoration: none; font-weight: bold; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#173b3b">
+    <title>Crear cuenta · Cazadores de Pigmentos</title>
+    <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}">
 </head>
-<body>
-    <div class="contenedor-registro">
-        <h2>Crea tu cuenta de Cazadores de Pigmentos</h2>
+<body class="auth-page">
+    <main class="auth-shell auth-shell--register">
+        <a class="auth-brand" href="{% url 'registro' %}" aria-label="Cazadores de Pigmentos, inicio">
+            <span class="auth-brand__icon" aria-hidden="true">✦</span>
+            <span>Cazadores <small>de Pigmentos</small></span>
+        </a>
 
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Convertirme en Cazador</button>
-        </form>
+        <section class="auth-card auth-card--register" aria-labelledby="register-title">
+            <div class="auth-card__eyebrow">NUEVA TRIPULACIÓN</div>
+            <h1 id="register-title">Comienza tu aventura</h1>
+            <p class="auth-intro">Crea tu cuenta para guardar tus hallazgos y avanzar por el mapa.</p>
 
-        <div class="login-link">
-            ¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia Sesión</a>
-        </div>
-    </div>
+            <form method="post" class="auth-form auth-form--register">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="auth-errors" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+                {% for field in form %}
+                    <div class="auth-field">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}<div class="auth-help">{{ field.help_text|safe }}</div>{% endif %}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="auth-submit">Crear mi cuenta</button>
+            </form>
+
+            <p class="auth-switch">¿Ya formas parte de la tripulación?
+                <a href="{% url 'login' %}">Iniciar sesión</a>
+            </p>
+        </section>
+
+        <p class="auth-footnote">Cada gran descubrimiento empieza con una primera pista.</p>
+    </main>
 </body>
 </html>

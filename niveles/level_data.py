@@ -31,6 +31,8 @@ def level_options(data):
         ]
         label = option.get("label")
         if not isinstance(label, str) or not label:
+            label = option.get("name")
+        if not isinstance(label, str) or not label:
             label = f"{'Paleta' if using_palettes or colors else 'Opción'} {option_id.upper()}"
 
         normalized.append({

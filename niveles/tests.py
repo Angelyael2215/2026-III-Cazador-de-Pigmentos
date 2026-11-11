@@ -3,6 +3,8 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
 
@@ -18,6 +20,8 @@ from .models import (
     UsuarioLogro,
 )
 from .services import validate_answer
+from .level_seed_data import GAME_LEVELS
+from .forms import LevelForm
 
 
 class LevelAnswerValidationTests(SimpleTestCase):
@@ -74,6 +78,28 @@ class LevelAnswerValidationTests(SimpleTestCase):
 
         with self.assertRaisesMessage(ValueError, "formato #RRGGBB"):
             validate_answer(level, {"colors": ["red"]})
+
+    def test_mix_accepts_legacy_pigment_ids_without_revealing_the_result(self):
+        level = type("TestLevel", (), {
+            "kind": "mix",
+            "data": {
+                "options": [
+                    {"id": "blue", "name": "Blue", "color": "#0000FF"},
+                    {"id": "yellow", "name": "Yellow", "color": "#FFFF00"},
+                    {"id": "red", "name": "Red", "color": "#FF0000"},
+                ]
+            },
+            "solution": {
+                "correct_combination": ["blue", "yellow"],
+                "result": {"name": "Green", "hex": "#008000"},
+            },
+        })()
+
+        self.assertTrue(validate_answer(level, {"colors": ["blue", "yellow"]}))
+        self.assertTrue(validate_answer(level, {"colors": ["#0000FF", "#FFFF00"]}))
+        self.assertFalse(validate_answer(level, {"colors": ["blue", "red"]}))
+        with self.assertRaisesMessage(ValueError, "no pertenece"):
+            validate_answer(level, {"colors": ["blue", "unknown"]})
 
 
 class LevelsApiTests(TestCase):
@@ -313,6 +339,231 @@ class PlayerGamePageTests(TestCase):
         response = self.client.get(f"/gestion/niveles/jugar/{locked_level.number}/")
 
         self.assertEqual(response.status_code, 403)
+
+    def test_legacy_mix_level_has_named_draggable_pigments_and_accepts_selection(self):
+        level = Level.objects.create(
+            number=2,
+            kind="mix",
+            title="Laboratorio de Pigmentos",
+            instruction="Arrastra los pigmentos al cuenco.",
+            data={
+                "options": [
+                    {"id": "azul", "name": "Azul Primario", "color": "#1E90FF"},
+                    {"id": "amarillo", "name": "Amarillo Primario", "color": "#FFD700"},
+                ]
+            },
+            solution={
+                "correct_combination": ["azul", "amarillo"],
+                "result": {"name": "Verde", "hex": "#008000"},
+            },
+        )
+        player, _ = Player.objects.get_or_create(user=self.user)
+        player.current_level_reached = level.number
+        player.save(update_fields=["current_level_reached"])
+
+        response = self.client.get(f"/gestion/niveles/jugar/{level.number}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Azul Primario")
+        self.assertContains(response, "Amarillo Primario")
+        self.assertContains(response, "data-mix-dropzone")
+        self.assertNotContains(response, "#008000")
+        self.assertNotContains(response, "correct_combination")
+
+        response = self.client.post(
+            f"/gestion/niveles/jugar/{level.number}/",
+            {"answer": json.dumps({"colors": ["azul", "amarillo"]})},
+        )
+
+        self.assertRedirects(response, f"/gestion/niveles/jugar/{level.number}/")
+        player.refresh_from_db()
+        self.assertEqual(player.current_level_reached, 3)
+        self.assertTrue(
+            LevelProgress.objects.get(player=player, level=level).completed
+        )
+        completed_page = self.client.get(f"/gestion/niveles/jugar/{level.number}/")
+        self.assertContains(completed_page, "¡Nuevo tono descubierto!")
+        self.assertContains(completed_page, "Verde")
+        self.assertContains(completed_page, "#008000")
+
+    def test_legacy_mix_configuration_is_valid_in_the_level_editor(self):
+        form = LevelForm(
+            data={
+                "number": 26,
+                "kind": "mix",
+                "title": "Mezcla clásica",
+                "instruction": "Combina dos pigmentos.",
+                "data": json.dumps({
+                    "options": [
+                        {"id": "blue", "name": "Azul", "color": "#0000FF"},
+                        {"id": "yellow", "name": "Amarillo", "color": "#FFFF00"},
+                    ]
+                }),
+                "solution": json.dumps({
+                    "correct_combination": ["blue", "yellow"],
+                    "result": {"name": "Green", "hex": "#008000"},
+                }),
+                "active": True,
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+
+
+class SeededGameLevelsTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="seeded-game-player",
+            password="test-password",
+        )
+        self.client.force_login(self.user)
+        call_command("seed_game_levels")
+
+    def test_seed_command_is_idempotent_and_does_not_replace_existing_levels(self):
+        first_count = Level.objects.count()
+
+        call_command("seed_game_levels")
+
+        self.assertEqual(first_count, 25)
+        self.assertEqual(Level.objects.count(), first_count)
+        self.assertEqual(
+            len({
+                json.dumps(data, sort_keys=True)
+                for data in Level.objects.filter(active=True).values_list("data", flat=True)
+            }),
+            25,
+        )
+
+    def test_seeded_level_configurations_pass_the_admin_form(self):
+        for definition in GAME_LEVELS:
+            with self.subTest(level=definition["number"]):
+                form_data = {
+                    **definition,
+                    "number": definition["number"] + 100,
+                    "data": json.dumps(definition["data"]),
+                    "solution": json.dumps(definition["solution"]),
+                    "active": True,
+                }
+                form = LevelForm(data=form_data)
+
+                self.assertTrue(form.is_valid(), form.errors)
+
+    def test_mix_can_use_a_subset_but_saturation_must_order_every_color(self):
+        base = {
+            "number": 26,
+            "title": "Prueba de configuración",
+            "instruction": "Selecciona la respuesta.",
+            "active": True,
+        }
+        mix_form = LevelForm(
+            data={
+                **base,
+                "kind": "mix",
+                "data": json.dumps({"colors": ["#112233", "#445566", "#778899"]}),
+                "solution": json.dumps({"colors": ["#112233", "#445566"]}),
+            }
+        )
+        saturation_form = LevelForm(
+            data={
+                **base,
+                "kind": "saturation",
+                "data": json.dumps({"colors": ["#112233", "#445566"]}),
+                "solution": json.dumps({"order": ["#112233"]}),
+            }
+        )
+
+        self.assertTrue(mix_form.is_valid(), mix_form.errors)
+        self.assertFalse(saturation_form.is_valid())
+
+    def test_seeded_levels_each_render_their_own_question_and_colors(self):
+        player, _ = Player.objects.get_or_create(user=self.user)
+        player.current_level_reached = 25
+        player.save(update_fields=["current_level_reached"])
+
+        for definition in GAME_LEVELS:
+            number = definition["number"]
+            with self.subTest(level=number):
+                response = self.client.get(f"/gestion/niveles/jugar/{number}/")
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, definition["title"])
+                self.assertContains(response, definition["instruction"])
+                self.assertNotContains(response, '"solution"')
+                if definition["kind"] in {"rgb", "hex", "harmony", "contrast"}:
+                    self.assertContains(
+                        response,
+                        next(
+                            (
+                                color
+                                for color in (
+                                    definition["data"].get("reference_color"),
+                                    definition["data"].get("target_hex"),
+                                    definition["data"].get("target_color"),
+                                    definition["data"].get("target_background"),
+                                )
+                                if color
+                            ),
+                            definition["title"],
+                        ),
+                    )
+
+    def test_correct_answers_complete_all_levels_and_award_progress(self):
+        for definition in GAME_LEVELS:
+            number = definition["number"]
+            response = self.client.post(
+                f"/gestion/niveles/jugar/{number}/",
+                {"answer": json.dumps(definition["solution"])},
+            )
+
+            self.assertRedirects(
+                response,
+                f"/gestion/niveles/jugar/{number}/",
+            )
+            player = Player.objects.get(user=self.user)
+            self.assertEqual(player.current_level_reached, number + 1)
+
+        player = Player.objects.get(user=self.user)
+        self.assertEqual((player.xp, player.pigments), (250, 25))
+        self.assertEqual(LevelProgress.objects.filter(player=player, completed=True).count(), 25)
+        self.assertEqual(
+            PerfilUsuario.objects.get(usuario=self.user).nivel_maximo_desbloqueado,
+            26,
+        )
+
+    def test_seed_command_aborts_on_conflicting_level_without_partial_creation(self):
+        Level.objects.all().delete()
+        Level.objects.create(
+            number=1,
+            kind="hex",
+            title="Nivel personalizado",
+            instruction="No debe reemplazarse.",
+            data={"options": [{"id": "a", "color": "#FFFFFF"}]},
+            solution={"option_id": "a"},
+        )
+
+        with self.assertRaisesMessage(CommandError, "contenido diferente"):
+            call_command("seed_game_levels")
+
+        self.assertEqual(Level.objects.count(), 1)
+        self.assertEqual(Level.objects.get(number=1).title, "Nivel personalizado")
+
+    def test_seed_command_can_preserve_conflicts_and_create_other_levels(self):
+        Level.objects.all().delete()
+        custom_level = Level.objects.create(
+            number=1,
+            kind="mix",
+            title="Nivel personalizado",
+            instruction="Conservar este reto.",
+            data={"colors": ["#FFFFFF", "#000000"]},
+            solution={"colors": ["#FFFFFF"]},
+        )
+
+        call_command("seed_game_levels", skip_conflicts=True)
+
+        self.assertEqual(Level.objects.count(), 25)
+        custom_level.refresh_from_db()
+        self.assertEqual(custom_level.title, "Nivel personalizado")
+        self.assertEqual(Level.objects.filter(active=True, number__lte=25).count(), 25)
 
 
 class LevelManagementPanelTests(TestCase):

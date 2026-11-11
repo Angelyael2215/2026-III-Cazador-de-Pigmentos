@@ -1,76 +1,84 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Iniciar Sesión - Cazadores de Pigmentos</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 400px; }
-        .login-card h2 { margin-top: 0; color: #2c3e50; text-align: center; font-size: 26px; margin-bottom: 25px; }
-
-        .login-card input[type="text"], .login-card input[type="password"] { width: 100%; padding: 12px; margin-top: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        .btn-login { width: 100%; background: #27ae60; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 20px; }
-        .btn-login:hover { background: #219150; }
-        .errorlist { color: red; padding-left: 20px; font-size: 0.9em; margin: 5px 0; }
-        .login-link { text-align: center; margin-top: 20px; font-size: 15px; }
-
-        .campo-agrupado { margin-bottom: 18px; text-align: left; }
-        .campo-agrupado label { font-weight: bold; color: #333; }
-        .password-container { position: relative; display: flex; }
-        .toggle-eye { position: absolute; right: 15px; top: 18px; cursor: pointer; font-size: 1.2rem; user-select: none; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#173b3b">
+    <title>Iniciar sesión · Cazadores de Pigmentos</title>
+    <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}">
 </head>
-<body>
-    <div class="login-card">
-        <h2>Iniciar Sesión</h2>
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_to }}">
+<body class="auth-page">
+    <main class="auth-shell">
+        <a class="auth-brand" href="{% url 'login' %}" aria-label="Cazadores de Pigmentos, inicio">
+            <span class="auth-brand__icon" aria-hidden="true">✦</span>
+            <span>Cazadores <small>de Pigmentos</small></span>
+        </a>
 
-            {{ form.non_field_errors }}
+        <section class="auth-card" aria-labelledby="login-title">
+            <div class="auth-card__eyebrow">BITÁCORA DE EXPEDICIÓN</div>
+            <h1 id="login-title">Qué bueno verte</h1>
+            <p class="auth-intro">Entra a tu cuenta y continúa la búsqueda de nuevos colores.</p>
 
-            <div class="campo-agrupado">
-                {{ form.username.label_tag }}
-                {{ form.username.errors }}
-                {{ form.username }}
-            </div>
+            <form method="post" class="auth-form">
+                {% csrf_token %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_to }}">
 
-            <div class="campo-agrupado">
-                {{ form.password.label_tag }}
-                {{ form.password.errors }}
-                <div class="password-container">
-                    {{ form.password }}
+                {% if form.non_field_errors %}
+                    <div class="auth-errors" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
 
-                    <span class="toggle-eye" onclick="togglePassword()" title="Mostrar u ocultar contraseña">
-                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </span>
+                <div class="auth-field">
+                    {{ form.username.label_tag }}
+                    {{ form.username.errors }}
+                    {{ form.username }}
                 </div>
-            </div>
 
-            <button type="submit" class="btn-login">Entrar al Panel</button>
-        </form>
-        <div class="login-link">
-            ¿Aún no tienes cuenta? <a href="{% url 'registro' %}">Crear cuenta</a>
-        </div>
-    </div>
+                <div class="auth-field">
+                    {{ form.password.label_tag }}
+                    {{ form.password.errors }}
+                    <div class="auth-password">
+                        {{ form.password }}
+                        <button class="auth-password__toggle" type="button"
+                                onclick="togglePassword()" aria-label="Mostrar contraseña"
+                                title="Mostrar u ocultar contraseña">
+                            <svg id="eye-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                 width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-submit">Entrar a la expedición</button>
+            </form>
+
+            <p class="auth-switch">¿Aún no tienes cuenta?
+                <a href="{% url 'registro' %}">Crear una cuenta</a>
+            </p>
+        </section>
+
+        <p class="auth-footnote">Prepara tu brújula. El próximo pigmento te espera.</p>
+    </main>
 
     <script>
         function togglePassword() {
             const passwordInput = document.getElementById('id_password');
             const eyeIcon = document.getElementById('eye-icon');
+            const toggle = document.querySelector('.auth-password__toggle');
+            const showingPassword = passwordInput.type === 'password';
 
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-
-                eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-            } else {
-                passwordInput.type = 'password';
-
-                eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-            }
+            passwordInput.type = showingPassword ? 'text' : 'password';
+            toggle.setAttribute(
+                'aria-label',
+                showingPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+            );
+            eyeIcon.innerHTML = showingPassword
+                ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
+                : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
         }
     </script>
 </body>
