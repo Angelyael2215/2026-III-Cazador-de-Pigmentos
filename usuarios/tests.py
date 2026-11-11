@@ -2,7 +2,7 @@ from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.test import TestCase
+from django.test import Client, TestCase
 
 from .models import EvaluacionAccesibilidad, PerfilUsuario
 from .permissions import get_management_sections, has_management_access
@@ -421,3 +421,217 @@ class ProfilePermissionTests(TestCase):
         self.assertEqual(listing.status_code, 200)
         self.assertEqual(create_form.status_code, 200)
         self.assertContains(listing, 'href="/gestion/perfiles/nuevo/"')
+
+
+class UserManagementTests(TestCase):
+    def setUp(self):
+        self.admin = get_user_model().objects.create_user(
+            username="user-management-admin",
+            is_staff=True,
+        )
+        self.client.force_login(self.admin)
+
+    def test_user_listing_search_and_combined_filters(self):
+        selected_role = Group.objects.create(name="selected-role")
+        other_role = Group.objects.create(name="other-role")
+        selected = get_user_model().objects.create_user(
+            username="matching-user",
+            email="matching@example.com",
+            is_active=False,
+        )
+        selected.groups.add(selected_role)
+        active_match = get_user_model().objects.create_user(
+            username="matching-active",
+            email="active@example.com",
+        )
+        active_match.groups.add(selected_role)
+        different_role = get_user_model().objects.create_user(
+            username="matching-other-role",
+            email="other@example.com",
+            is_active=False,
+        )
+        different_role.groups.add(other_role)
+        email_match = get_user_model().objects.create_user(
+            username="another-name",
+            email="lookup@example.com",
+            is_active=False,
+        )
+
+        response = self.client.get(
+            "/gestion/usuarios/",
+            {"q": "matching", "estado": "inactivo", "rol": selected_role.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, selected.username)
+        self.assertNotContains(response, active_match.username)
+        self.assertNotContains(response, different_role.username)
+        self.assertContains(response, 'name="q"')
+        self.assertContains(response, 'value="matching"')
+        self.assertContains(response, 'name="rol"')
+        self.assertContains(response, 'name="estado"')
+        self.assertContains(response, 'value="inactivo" selected')
+
+        response = self.client.get("/gestion/usuarios/", {"q": "lookup@"})
+        self.assertContains(response, email_match.username)
+        self.assertContains(response, email_match.email)
+        self.assertNotContains(response, selected.username)
+
+    def test_user_list_shows_account_metadata_without_password_data(self):
+        user = get_user_model().objects.create_user(
+            username="visible-account",
+            email="visible@example.com",
+            password="NeverDisplay-Password-381!",
+        )
+
+        response = self.client.get("/gestion/usuarios/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, user.email)
+        self.assertContains(response, "Fecha de alta")
+        self.assertContains(response, "Activo")
+        self.assertNotContains(response, "NeverDisplay-Password-381!")
+        self.assertNotContains(response, user.password)
+
+    def test_create_and_edit_user_use_safe_password_handling(self):
+        response = self.client.post(
+            "/gestion/crear/",
+            {
+                "username": "created-account",
+                "email": "created@example.com",
+                "password1": "Strong-Created-Password-481!",
+                "password2": "Strong-Created-Password-481!",
+            },
+        )
+
+        self.assertRedirects(response, "/gestion/usuarios/")
+        created = get_user_model().objects.get(username="created-account")
+        self.assertEqual(created.email, "created@example.com")
+        self.assertTrue(created.check_password("Strong-Created-Password-481!"))
+        self.assertNotEqual(created.password, "Strong-Created-Password-481!")
+
+        response = self.client.post(
+            f"/gestion/editar/{created.pk}/",
+            {"username": "renamed-account", "email": "renamed@example.com"},
+        )
+        self.assertRedirects(response, "/gestion/usuarios/")
+        created.refresh_from_db()
+        self.assertEqual(created.username, "renamed-account")
+        self.assertEqual(created.email, "renamed@example.com")
+        self.assertTrue(created.check_password("Strong-Created-Password-481!"))
+
+    def test_set_password_form_changes_password_without_exposing_old_password(self):
+        target = get_user_model().objects.create_user(
+            username="password-target",
+            password="Previous-Password-471!",
+        )
+        response = self.client.get(
+            f"/gestion/usuarios/{target.pk}/contrasena/"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "new_password1")
+        self.assertNotContains(response, "old_password")
+        self.assertNotContains(response, target.password)
+        self.assertNotContains(response, "Previous-Password-471!")
+
+        response = self.client.post(
+            f"/gestion/usuarios/{target.pk}/contrasena/",
+            {
+                "new_password1": "New-Strong-Password-563!",
+                "new_password2": "New-Strong-Password-563!",
+            },
+        )
+
+        self.assertRedirects(response, "/gestion/usuarios/")
+        target.refresh_from_db()
+        self.assertTrue(target.check_password("New-Strong-Password-563!"))
+        self.assertFalse(target.check_password("Previous-Password-471!"))
+
+    def test_account_activation_requires_confirmation_and_post(self):
+        target = get_user_model().objects.create_user(
+            username="account-to-deactivate",
+        )
+
+        confirmation = self.client.get(
+            f"/gestion/usuarios/{target.pk}/estado/desactivar/"
+        )
+        self.assertEqual(confirmation.status_code, 200)
+        self.assertContains(confirmation, "csrfmiddlewaretoken")
+        target.refresh_from_db()
+        self.assertTrue(target.is_active)
+
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.admin)
+        response = csrf_client.post(
+            f"/gestion/usuarios/{target.pk}/estado/desactivar/"
+        )
+        self.assertEqual(response.status_code, 403)
+        target.refresh_from_db()
+        self.assertTrue(target.is_active)
+
+        response = self.client.post(
+            f"/gestion/usuarios/{target.pk}/estado/desactivar/"
+        )
+        self.assertRedirects(response, "/gestion/usuarios/")
+        target.refresh_from_db()
+        self.assertFalse(target.is_active)
+
+        response = self.client.post(
+            f"/gestion/usuarios/{target.pk}/estado/activar/"
+        )
+        self.assertRedirects(response, "/gestion/usuarios/")
+        target.refresh_from_db()
+        self.assertTrue(target.is_active)
+
+    def test_delete_requires_confirmation_and_post(self):
+        target = get_user_model().objects.create_user(
+            username="account-to-delete",
+        )
+
+        confirmation = self.client.get(f"/gestion/eliminar/{target.pk}/")
+        self.assertEqual(confirmation.status_code, 200)
+        self.assertContains(confirmation, target.username)
+        self.assertContains(confirmation, "progresos y logros")
+        target.refresh_from_db()
+
+        response = self.client.post(f"/gestion/eliminar/{target.pk}/")
+        self.assertRedirects(response, "/gestion/usuarios/")
+        self.assertFalse(get_user_model().objects.filter(pk=target.pk).exists())
+
+    def test_read_only_user_cannot_edit_delete_or_change_account_state(self):
+        reader = get_user_model().objects.create_user(username="user-list-reader")
+        reader_group = Group.objects.create(name="user-list-reader-role")
+        reader_group.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="auth",
+                codename="view_user",
+            )
+        )
+        reader.groups.add(reader_group)
+        target = get_user_model().objects.create_user(username="protected-account")
+        self.client.force_login(reader)
+
+        listing = self.client.get("/gestion/usuarios/")
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, target.username)
+        self.assertNotContains(listing, "Cambiar contraseña")
+        self.assertNotContains(listing, "Desactivar")
+        self.assertNotContains(listing, "Eliminar")
+
+        denied_paths = (
+            f"/gestion/editar/{target.pk}/",
+            f"/gestion/eliminar/{target.pk}/",
+            f"/gestion/usuarios/{target.pk}/estado/desactivar/",
+            f"/gestion/usuarios/{target.pk}/contrasena/",
+        )
+        for path in denied_paths:
+            with self.subTest(path=path, method="GET"):
+                response = self.client.get(path)
+                self.assertIn(response.status_code, (302, 403))
+            with self.subTest(path=path, method="POST"):
+                response = self.client.post(path, {})
+                self.assertIn(response.status_code, (302, 403))
+
+        target.refresh_from_db()
+        self.assertTrue(target.is_active)

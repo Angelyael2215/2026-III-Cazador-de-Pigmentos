@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from django.contrib.auth.forms import SetPasswordForm
 from .forms import (
     AsignarPermisosUsuarioForm,
     RolForm,
@@ -15,7 +17,6 @@ from .models import PerfilUsuario, EvaluacionAccesibilidad
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.forms import UserCreationForm
 from .permissions import (
     AppPermissionRequiredMixin,
     get_management_sections,
@@ -232,11 +233,30 @@ def editar_rol(request, role_id):
 def gestion_usuarios_roles(request):
     can_view = user_has_permission(request.user, "auth.view_user")
     usuarios = User.objects.none()
+    search_query = request.GET.get("q", "").strip()
+    status_filter = request.GET.get("estado", "")
+    role_filter = request.GET.get("rol", "")
     if can_view:
         usuarios = User.objects.all().prefetch_related(
             'groups__permissions__content_type',
             'user_permissions__content_type',
         )
+        if search_query:
+            usuarios = usuarios.filter(
+                Q(username__icontains=search_query)
+                | Q(email__icontains=search_query)
+            )
+        if status_filter == "activo":
+            usuarios = usuarios.filter(is_active=True)
+        elif status_filter == "inactivo":
+            usuarios = usuarios.filter(is_active=False)
+        else:
+            status_filter = ""
+        if role_filter.isdecimal() and Group.objects.filter(pk=role_filter).exists():
+            usuarios = usuarios.filter(groups__pk=role_filter).distinct()
+        else:
+            role_filter = ""
+
         for usuario in usuarios:
             effective_permissions = {}
             for role in usuario.groups.all():
@@ -274,6 +294,10 @@ def gestion_usuarios_roles(request):
             'can_change_user': user_has_permission(request.user, "auth.change_user"),
             'can_delete_user': user_has_permission(request.user, "auth.delete_user"),
             'can_assign_roles': es_administrador(request.user),
+            'search_query': search_query,
+            'status_filter': status_filter,
+            'role_filter': role_filter,
+            'roles': Group.objects.order_by("name"),
         },
     )
 
@@ -336,6 +360,45 @@ def eliminar_rol(request, role_id):
         return redirect('gestion_roles')
     return render(request, 'usuarios/eliminar.html', {'objeto': rol})
 
+
+@user_passes_test(
+    lambda user: user_has_permission(user, "auth.change_user"),
+    login_url='login',
+)
+def estado_usuario(request, user_id, accion):
+    if accion not in {"activar", "desactivar"}:
+        raise PermissionDenied
+
+    usuario_obj = get_object_or_404(User, pk=user_id)
+    if request.method == "POST":
+        usuario_obj.is_active = accion == "activar"
+        usuario_obj.save(update_fields=["is_active"])
+        return redirect("gestion_usuarios_roles")
+
+    return render(
+        request,
+        "usuarios/confirmar_estado_usuario.html",
+        {"usuario_obj": usuario_obj, "accion": accion},
+    )
+
+
+@user_passes_test(
+    lambda user: user_has_permission(user, "auth.change_user"),
+    login_url='login',
+)
+def cambiar_contrasena_usuario(request, user_id):
+    usuario_obj = get_object_or_404(User, pk=user_id)
+    form = SetPasswordForm(usuario_obj, request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("gestion_usuarios_roles")
+    return render(
+        request,
+        "usuarios/cambiar_contrasena_usuario.html",
+        {"form": form, "usuario_obj": usuario_obj},
+    )
+
+
 class UsuarioUpdateView(LoginRequiredMixin, AppPermissionRequiredMixin, UpdateView):
     model = User
     fields = ['username', 'email']
@@ -346,17 +409,24 @@ class UsuarioUpdateView(LoginRequiredMixin, AppPermissionRequiredMixin, UpdateVi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['list_url'] = 'gestion_usuarios_roles'
+        context['model_label'] = 'Editar usuario'
         return context
 
 class UsuarioDeleteView(LoginRequiredMixin, AppPermissionRequiredMixin, DeleteView):
     model = User
     permission_required = "auth.delete_user"
-    template_name = 'usuarios/eliminar.html'
+    template_name = 'usuarios/confirmar_eliminar_usuario.html'
     success_url = reverse_lazy('gestion_usuarios_roles')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["usuario_obj"] = self.object
+        return context
+
 
 class UsuarioCreateView(LoginRequiredMixin, AppPermissionRequiredMixin, CreateView):
     model = User
-    form_class = UserCreationForm
+    form_class = RegistroUsuarioForm
     permission_required = "auth.add_user"
     template_name = 'usuarios/crud/model_form.html'
     success_url = reverse_lazy('gestion_usuarios_roles')
@@ -364,4 +434,5 @@ class UsuarioCreateView(LoginRequiredMixin, AppPermissionRequiredMixin, CreateVi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['list_url'] = 'gestion_usuarios_roles'
+        context['model_label'] = 'Crear usuario'
         return context

@@ -1,0 +1,19 @@
+{% extends 'usuarios/base_admin.html' %}
+
+{% block content %}
+<h2>Confirmar eliminación de cuenta</h2>
+<p>
+    ¿Estás seguro de que deseas eliminar permanentemente la cuenta
+    <strong>{{ usuario_obj.username }}</strong>?
+</p>
+<p>
+    Esta acción no se puede deshacer y puede eliminar también datos vinculados,
+    como su perfil, evaluaciones, progresos y logros. Para conservar esos datos,
+    cancela y desactiva la cuenta en su lugar.
+</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn">Eliminar permanentemente</button>
+    <a href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+</form>
+{% endblock %}

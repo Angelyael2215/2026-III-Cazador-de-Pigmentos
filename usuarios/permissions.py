@@ -29,6 +29,8 @@ MANAGEMENT_SECTIONS = (
             "gestion_usuarios_roles",
             "asignar_roles_usuario",
             "asignar_permisos_usuario",
+            "estado_usuario",
+            "cambiar_contrasena_usuario",
             "crear_usuario",
             "editar_usuario",
             "eliminar_usuario",
