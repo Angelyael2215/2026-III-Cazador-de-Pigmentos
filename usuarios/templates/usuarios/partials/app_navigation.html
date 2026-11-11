@@ -1,0 +1,22 @@
+<a class="app-skip-link" href="#main-content">Saltar al contenido principal</a>
+<nav class="app-navigation" aria-label="Navegación principal">
+    <div class="app-navigation__links">
+        <a href="{% url 'bienvenida_jugador' %}"
+           {% if app_navigation_is_game_current %}aria-current="page"{% endif %}>Juego y perfil</a>
+        {% if app_has_management_access %}
+            <a href="{% url 'dashboard_admin' %}"
+               {% if app_navigation_is_dashboard_current %}aria-current="page"{% endif %}>Panel</a>
+            {% for section in app_navigation_sections %}
+                <a href="{% url section.url_name %}"
+                   {% if section.is_current %}aria-current="page"{% endif %}>{{ section.label }}</a>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <div class="app-navigation__account">
+        <span class="app-navigation__username">Usuario: {{ request.user.username }}</span>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Cerrar sesión</button>
+        </form>
+    </div>
+</nav>

@@ -176,40 +176,33 @@
             </div>
         </div>
 
-        <div class="actions-container">
-            <a href="{% url 'mapa_niveles' %}" class="menu-btn btn-map">🗺️ Abrir Mapa de Niveles</a>
-            <a href="{% url 'ajustes_jugador' %}" class="menu-btn btn-settings">⚙️ Ajustes de Accesibilidad</a>
-            
-            <form action="{% url 'logout' %}" method="post" style="margin: 0; width: 100%;">
-                {% csrf_token %}
-                <button type="submit" class="menu-btn btn-logout">🚪 Cerrar Sesión</button>
-            </form>
-        </div>
-    </div>
-    <section class="levels-card">
-        <h2>Mis niveles</h2>
-        {% if levels %}
-            <div class="level-list">
-                {% for item in levels %}
-                    <article class="level-item">
-                        <div>
-                            <h3>Nivel {{ item.level.number }}: {{ item.level.title }}</h3>
-                            <p>{{ item.level.get_kind_display }}{% if item.completed %} · Completado{% endif %}</p>
-                        </div>
-                        {% if item.unlocked %}
-                            <a class="level-play" href="{% url 'jugar_nivel' item.level.number %}">
-                                {% if item.completed %}Volver a jugar{% else %}Jugar{% endif %}
-                            </a>
-                        {% else %}
-                            <span class="level-locked">🔒 Bloqueado</span>
-                        {% endif %}
-                    </article>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="levels-empty">Todavía no hay niveles activos para jugar.</p>
-            {% if request.user.is_staff %}
-                <a href="{% url 'niveles_juego_crear' %}">Crear niveles desde el panel de administración</a>
+        </section>
+
+        <section class="levels">
+            <h2>Mis niveles</h2>
+            {% if levels %}
+                <div class="level-list">
+                    {% for item in levels %}
+                        <article class="level">
+                            <div>
+                                <h3>Nivel {{ item.level.number }}: {{ item.level.title }}</h3>
+                                <p>{{ item.level.get_kind_display }}{% if item.completed %} · Completado{% endif %}</p>
+                            </div>
+                            {% if item.unlocked %}
+                                <a class="btn-play" href="{% url 'jugar_nivel' item.level.number %}">
+                                    {% if item.completed %}Volver a jugar{% else %}Jugar{% endif %}
+                                </a>
+                            {% else %}
+                                <span class="btn-locked">🔒 Bloqueado</span>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty">Todavía no hay niveles activos para jugar.</p>
+                {% if request.user.is_staff %}
+                    <a class="admin-link" href="{% url 'niveles_juego_crear' %}">Crear niveles desde el panel de administración</a>
+                {% endif %}
             {% endif %}
         {% endif %}
     </section>

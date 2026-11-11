@@ -3,6 +3,7 @@ import re
 
 from django.utils import timezone
 
+from .level_data import correct_option_id, level_options
 from .models import LevelProgress
 
 
@@ -53,9 +54,17 @@ def validate_answer(level, answer):
         return selected == correct
 
     option_id = answer.get("option_id")
+    expected_option_id = correct_option_id(solution)
+    available_option_ids = {
+        option["id"] for option in level_options(level.data)
+    }
+    if not available_option_ids or expected_option_id not in available_option_ids:
+        raise ValueError("La estructura de opciones de este nivel no es válida.")
     if not isinstance(option_id, str):
         raise ValueError("Se requiere option_id.")
-    return option_id == solution["option_id"]
+    if option_id not in available_option_ids:
+        raise ValueError("La opción seleccionada no pertenece a este nivel.")
+    return option_id == expected_option_id
 
 
 def submit_level_answer(player, level, answer):

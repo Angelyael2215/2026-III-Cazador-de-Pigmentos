@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
@@ -35,6 +37,75 @@ class ProfilePermissionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "profile-reader")
         self.assertNotContains(response, "href=\"/gestion/perfiles/nuevo/\"")
+        self.assertContains(response, ">Perfiles</a>")
+        self.assertNotContains(response, ">Roles</a>")
+        self.assertNotContains(response, ">Usuarios</a>")
+
+    def test_player_sees_game_navigation_without_administration_links(self):
+        user = get_user_model().objects.create_user(
+            username="navigation-player",
+            password="test-password",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/gestion/jugador/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'aria-label="Navegación principal"')
+        self.assertContains(response, 'href="/gestion/jugador/"')
+        self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, "Cerrar sesión")
+        self.assertNotContains(response, ">Panel</a>")
+        self.assertNotContains(response, ">Usuarios</a>")
+        self.assertNotContains(response, ">Roles</a>")
+
+    def test_admin_navigation_includes_game_and_current_section(self):
+        admin = get_user_model().objects.create_user(
+            username="navigation-admin",
+            password="test-password",
+            is_staff=True,
+        )
+        PerfilUsuario.objects.create(usuario=admin)
+        self.client.force_login(admin)
+
+        response = self.client.get("/gestion/perfiles/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, ">Panel</a>")
+        self.assertContains(response, ">Juego y perfil</a>")
+        self.assertContains(response, 'href="/gestion/perfiles/"')
+        self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, ">Usuarios</a>")
+        self.assertContains(response, ">Roles</a>")
+
+    def test_authenticated_user_without_permission_is_denied_direct_list_url(self):
+        user = get_user_model().objects.create_user(
+            username="no-permissions",
+            password="test-password",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/gestion/perfiles/")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_shared_navigation_supports_keyboard_and_mobile(self):
+        user = get_user_model().objects.create_user(
+            username="accessible-navigation-player",
+            password="test-password",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get("/gestion/jugador/")
+
+        self.assertContains(response, 'href="#main-content"')
+        self.assertContains(response, "Saltar al contenido principal")
+        self.assertContains(response, 'href="/static/usuarios/app_navigation.css"')
+        stylesheet = (
+            Path(__file__).parent / "static" / "usuarios" / "app_navigation.css"
+        ).read_text()
+        self.assertIn(":focus-visible", stylesheet)
+        self.assertIn("@media (max-width: 700px)", stylesheet)
 
     def test_login_sends_permission_user_to_available_views(self):
         user = get_user_model().objects.create_user(

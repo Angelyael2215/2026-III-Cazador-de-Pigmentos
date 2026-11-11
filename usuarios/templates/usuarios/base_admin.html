@@ -1,15 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Administración Propia - Cazadores de Pigmentos</title>
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
-        nav { background: #1a252f; padding: 12px 20px; margin-bottom: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; }
-        .nav-links a { color: #ecf0f1; text-decoration: none; margin-right: 20px; font-weight: bold; }
-        .nav-links a:hover { color: #3498db; }
-        .user-info { color: white; }
-        .user-info a { color: #e74c3c; text-decoration: none; margin-left: 10px; font-weight: bold; }
         .container { background: white; padding: 25px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
@@ -20,54 +17,9 @@
     </style>
 </head>
 <body>
-    <nav>
-        <div class="nav-links">
-            {% if request.user.is_staff or request.user.is_superuser %}
-                <a href="{% url 'dashboard_admin' %}">🏠 Dashboard</a>
-            {% elif perms.auth.view_permission or perms.auth.add_permission or perms.auth.view_group or perms.auth.add_group or perms.auth.view_user or perms.auth.add_user or perms.usuarios.view_perfilusuario or perms.usuarios.add_perfilusuario or perms.usuarios.view_evaluacionaccesibilidad or perms.usuarios.add_evaluacionaccesibilidad or perms.niveles.view_level or perms.niveles.add_level or perms.niveles.view_nivel or perms.niveles.add_nivel or perms.niveles.view_progreso or perms.niveles.add_progreso or perms.niveles.view_logro or perms.niveles.add_logro or perms.niveles.view_usuariologro or perms.niveles.add_usuariologro %}
-                <a href="{% url 'dashboard_admin' %}">🏠 Mis permisos</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.auth.view_permission %}
-                <a href="{% url 'gestion_permisos' %}">Permisos</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.auth.view_group %}
-                <a href="{% url 'gestion_roles' %}">Roles</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.auth.view_user %}
-                <a href="{% url 'gestion_usuarios_roles' %}">Usuarios</a>
-            {% endif %}
-            <a href="{% url 'bienvenida_jugador' %}">Mi perfil de jugador</a>
-            {% if request.user.is_staff or request.user.is_superuser or perms.niveles.view_level %}
-                <a href="{% url 'niveles_juego_lista' %}">Niveles del juego</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.usuarios.view_perfilusuario %}
-                <a href="{% url 'perfil_lista' %}">Perfiles</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.usuarios.view_evaluacionaccesibilidad %}
-                <a href="{% url 'evaluacion_lista' %}">Evaluaciones</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.niveles.view_nivel %}
-                <a href="{% url 'nivel_lista' %}">Niveles</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.niveles.view_progreso %}
-                <a href="{% url 'progreso_lista' %}">Progresos</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.niveles.view_logro %}
-                <a href="{% url 'logro_lista' %}">Logros</a>
-            {% endif %}
-            {% if request.user.is_staff or request.user.is_superuser or perms.niveles.view_usuariologro %}
-                <a href="{% url 'usuariologro_lista' %}">Logros de usuarios</a>
-            {% endif %}
-        </div>
-        <div class="user-info">
-            👤 {{ request.user.username }} | <form method="post" action="{% url 'logout' %}">
-    {% csrf_token %}
-    <button type="submit">Cerrar sesión</button>
-</form>
-        </div>
-    </nav>
-    <div class="container">
+    {% include "usuarios/partials/app_navigation.html" %}
+    <main id="main-content" class="container">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 </body>
 </html>
