@@ -8,7 +8,15 @@ from rest_framework.test import APIClient
 
 from usuarios.models import PerfilUsuario
 
-from .models import Level, LevelProgress, Player
+from .models import (
+    Level,
+    LevelProgress,
+    Logro,
+    Nivel,
+    Player,
+    Progreso,
+    UsuarioLogro,
+)
 from .services import validate_answer
 
 
@@ -466,3 +474,150 @@ class LevelManagementPanelTests(TestCase):
         response = self.client.get("/admin/")
 
         self.assertEqual(response.status_code, 404)
+
+
+class LevelPermissionMatrixTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.owner = user_model.objects.create_user(username="matrix-owner")
+        self.player = Player.objects.create(user=self.owner)
+        self.level = Level.objects.create(
+            number=1,
+            kind="branding",
+            title="Nivel de prueba",
+            instruction="Elige.",
+            data={},
+            solution={},
+        )
+        self.level_progress = LevelProgress.objects.create(
+            player=self.player,
+            level=self.level,
+        )
+        self.legacy_level = Nivel.objects.create(numero=1, nombre="Nivel antiguo")
+        self.progress = Progreso.objects.create(
+            usuario=self.owner,
+            nivel=self.legacy_level,
+        )
+        self.achievement = Logro.objects.create(
+            nombre_logro="Primer logro",
+            descripcion="Descripción",
+        )
+        self.user_achievement = UsuarioLogro.objects.create(
+            usuario=self.owner,
+            logro=self.achievement,
+        )
+        self.user = user_model.objects.create_user(username="matrix-player")
+        self.client.force_login(self.user)
+
+    def test_denied_role_cannot_use_level_crud_urls_or_post_actions(self):
+        model_routes = (
+            ("", self.legacy_level.pk),
+            ("progresos/", self.progress.pk),
+            ("logros/", self.achievement.pk),
+            ("usuarios-logros/", self.user_achievement.pk),
+        )
+        paths = []
+        for prefix, object_id in model_routes:
+            collection = f"/gestion/niveles/{prefix}"
+            paths.extend((
+                collection,
+                f"{collection}nuevo/",
+                f"{collection}{object_id}/editar/",
+                f"{collection}{object_id}/eliminar/",
+            ))
+        paths.extend((
+            "/gestion/niveles/juego/",
+            "/gestion/niveles/juego/nuevo/",
+            f"/gestion/niveles/juego/{self.level.pk}/editar/",
+            f"/gestion/niveles/juego/{self.level.pk}/eliminar/",
+        ))
+
+        for path in paths:
+            with self.subTest(method="GET", path=path):
+                response = self.client.get(path)
+                self.assertIn(response.status_code, (302, 403))
+            with self.subTest(method="POST", path=path):
+                response = self.client.post(path, {})
+                self.assertIn(response.status_code, (302, 403))
+
+    def test_direct_and_group_permissions_grant_only_their_actions(self):
+        reader_group = Group.objects.create(name="legacy-level-reader")
+        reader_group.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="niveles",
+                codename="view_nivel",
+            )
+        )
+        self.user.groups.add(reader_group)
+        self.user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="niveles",
+                codename="add_nivel",
+            )
+        )
+
+        listing = self.client.get("/gestion/niveles/")
+        creation_form = self.client.get("/gestion/niveles/nuevo/")
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(creation_form.status_code, 200)
+
+        created = self.client.post(
+            "/gestion/niveles/nuevo/",
+            {"numero": 2, "nombre": "Nivel creado"},
+        )
+        self.assertRedirects(created, "/gestion/niveles/")
+        new_level = Nivel.objects.get(numero=2)
+        for path in (
+            f"/gestion/niveles/{new_level.pk}/editar/",
+            f"/gestion/niveles/{new_level.pk}/eliminar/",
+        ):
+            with self.subTest(path=path):
+                response = self.client.post(path, {})
+                self.assertIn(response.status_code, (302, 403))
+
+        self.user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="niveles",
+                codename="change_nivel",
+            ),
+            Permission.objects.get(
+                content_type__app_label="niveles",
+                codename="delete_nivel",
+            ),
+        )
+        edited = self.client.post(
+            f"/gestion/niveles/{new_level.pk}/editar/",
+            {"numero": 2, "nombre": "Nivel editado"},
+        )
+        self.assertRedirects(edited, "/gestion/niveles/")
+        new_level.refresh_from_db()
+        self.assertEqual(new_level.nombre, "Nivel editado")
+
+        deleted = self.client.post(f"/gestion/niveles/{new_level.pk}/eliminar/")
+        self.assertRedirects(deleted, "/gestion/niveles/")
+        self.assertFalse(Nivel.objects.filter(pk=new_level.pk).exists())
+
+    def test_inactive_staff_cannot_manage_game_levels(self):
+        inactive_staff = get_user_model().objects.create_user(
+            username="inactive-level-staff",
+            is_staff=True,
+            is_active=False,
+        )
+        self.client.force_login(inactive_staff)
+
+        response = self.client.get("/gestion/niveles/juego/")
+        self.assertIn(response.status_code, (302, 403))
+
+        response = self.client.post(
+            "/gestion/niveles/juego/nuevo/",
+            {
+                "number": 2,
+                "kind": "branding",
+                "title": "No autorizado",
+                "instruction": "No autorizado.",
+                "data": "{}",
+                "solution": "{}",
+            },
+        )
+        self.assertIn(response.status_code, (302, 403))
+        self.assertFalse(Level.objects.filter(number=2).exists())

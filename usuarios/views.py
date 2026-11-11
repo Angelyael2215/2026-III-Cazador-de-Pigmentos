@@ -28,7 +28,11 @@ from niveles.models import Level, LevelProgress, Player
 
 # FUNCIÓN DE VERIFICACIÓN
 def es_administrador(user):
-    return user.is_authenticated and (user.is_superuser or user.is_staff)
+    return (
+        user.is_authenticated
+        and user.is_active
+        and (user.is_superuser or user.is_staff)
+    )
 
 
 #  VISTA DE REGISTRO 
@@ -107,7 +111,7 @@ def bienvenida_jugador(request):
 
 
 def is_admin(user):
-    return user.is_authenticated and (user.is_staff or user.is_superuser)
+    return es_administrador(user)
 
 
 # VISTAS PROTEGIDAS (SOLO ADMINISTRADORES) 
