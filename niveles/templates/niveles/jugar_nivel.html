@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Nivel {{ level.number }} · Cazadores de Pigmentos</title>
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
     <style>
         body { font-family: Arial, sans-serif; background: #1a252f; color: white; margin: 0; padding: 32px 16px; }
         main { max-width: 720px; margin: auto; background: #2c3e50; padding: 28px; border-radius: 10px; }
@@ -22,13 +24,16 @@
         .order-list { list-style: none; padding: 0; }
         .order-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #34495e; margin: 8px 0; padding: 10px; border-radius: 6px; }
         .order-list button { padding: 7px 10px; margin-left: 4px; background: #49627c; }
+        .navigation { display: flex; flex-wrap: wrap; gap: 16px; }
+        .palette-colors { display: flex; gap: 6px; }
     </style>
 </head>
 <body>
-<main>
-    <a href="{% url 'bienvenida_jugador' %}">← Volver a mis niveles</a>
+{% include "usuarios/partials/app_navigation.html" %}
+<main id="main-content" tabindex="-1">
     <h1>Nivel {{ level.number }}: {{ level.title }}</h1>
     <p class="instruction">{{ level.instruction }}</p>
+    {% if brand_name %}<p>Marca: <strong>{{ brand_name }}</strong></p>{% endif %}
 
     {% for message in messages %}
         <p class="feedback {{ message.tags }}">{{ message }}</p>
@@ -96,19 +101,27 @@
         {% else %}
             <fieldset>
                 <legend>Elige una opción</legend>
-                {% for option in level.data.options %}
+                {% for option in options %}
                     <label class="choice">
                         <input type="radio" name="option" value="{{ option.id }}" required>
-                        {% if option.color %}<span class="swatch" style="background-color: {{ option.color }}"></span>{% endif %}
-                        {{ option.label|default:option.id }}
+                        <span>{{ option.label }}</span>
+                        <span class="palette-colors">
+                            {% for color in option.colors %}
+                                <span class="swatch" style="background-color: {{ color }}" title="{{ color }}"></span>
+                            {% endfor %}
+                        </span>
                     </label>
                 {% empty %}
-                    <p>Este nivel necesita opciones en el campo <code>data.options</code>.</p>
+                    <p>Este nivel necesita opciones en <code>data.options</code> o <code>data.palette_options</code>.</p>
                 {% endfor %}
             </fieldset>
         {% endif %}
 
-        <button type="submit">Enviar respuesta</button>
+        {% if level.kind == "rgb" or level.kind == "mix" or level.kind == "temperature" or level.kind == "saturation" or options %}
+            <button type="submit">Enviar respuesta</button>
+        {% else %}
+            <button type="submit" disabled>Este nivel aún no está configurado correctamente</button>
+        {% endif %}
     </form>
 </main>
 <script>

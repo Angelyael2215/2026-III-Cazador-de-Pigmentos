@@ -7,13 +7,15 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from usuarios.models import PerfilUsuario
-
+from .level_data import level_options
 from .models import Level, LevelProgress, Player
 from .services import submit_level_answer
 
 
 def level_colors(level):
     data = level.data
+    if not isinstance(data, dict):
+        return []
     colors = data.get("colors", [])
     if not colors and isinstance(data.get("options"), list):
         colors = [
@@ -70,5 +72,11 @@ def play_level(request, number):
             "level": level,
             "progress": progress,
             "colors": level_colors(level),
+            "options": level_options(level.data),
+            "brand_name": (
+                level.data.get("brand_name")
+                if isinstance(level.data, dict)
+                else None
+            ),
         },
     )

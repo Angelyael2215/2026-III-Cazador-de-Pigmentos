@@ -9,6 +9,7 @@ MANAGEMENT_SECTIONS = (
         "list_url": "gestion_permisos",
         "add_permission": "auth.add_permission",
         "create_url": "gestion_permisos",
+        "active_url_names": ("gestion_permisos",),
     },
     {
         "label": "Roles",
@@ -16,6 +17,7 @@ MANAGEMENT_SECTIONS = (
         "list_url": "gestion_roles",
         "add_permission": "auth.add_group",
         "create_url": "gestion_roles",
+        "active_url_names": ("gestion_roles", "editar_rol", "eliminar_rol"),
     },
     {
         "label": "Usuarios",
@@ -23,6 +25,14 @@ MANAGEMENT_SECTIONS = (
         "list_url": "gestion_usuarios_roles",
         "add_permission": "auth.add_user",
         "create_url": "crear_usuario",
+        "active_url_names": (
+            "gestion_usuarios_roles",
+            "asignar_roles_usuario",
+            "asignar_permisos_usuario",
+            "crear_usuario",
+            "editar_usuario",
+            "eliminar_usuario",
+        ),
     },
     {
         "label": "Perfiles",
@@ -30,6 +40,12 @@ MANAGEMENT_SECTIONS = (
         "list_url": "perfil_lista",
         "add_permission": "usuarios.add_perfilusuario",
         "create_url": "perfil_crear",
+        "active_url_names": (
+            "perfil_lista",
+            "perfil_crear",
+            "perfil_editar",
+            "perfil_eliminar",
+        ),
     },
     {
         "label": "Evaluaciones de accesibilidad",
@@ -37,6 +53,12 @@ MANAGEMENT_SECTIONS = (
         "list_url": "evaluacion_lista",
         "add_permission": "usuarios.add_evaluacionaccesibilidad",
         "create_url": "evaluacion_crear",
+        "active_url_names": (
+            "evaluacion_lista",
+            "evaluacion_crear",
+            "evaluacion_editar",
+            "evaluacion_eliminar",
+        ),
     },
     {
         "label": "Niveles del juego",
@@ -44,6 +66,12 @@ MANAGEMENT_SECTIONS = (
         "list_url": "niveles_juego_lista",
         "add_permission": "niveles.add_level",
         "create_url": "niveles_juego_crear",
+        "active_url_names": (
+            "niveles_juego_lista",
+            "niveles_juego_crear",
+            "niveles_juego_editar",
+            "niveles_juego_eliminar",
+        ),
     },
     {
         "label": "Niveles",
@@ -51,6 +79,12 @@ MANAGEMENT_SECTIONS = (
         "list_url": "nivel_lista",
         "add_permission": "niveles.add_nivel",
         "create_url": "nivel_crear",
+        "active_url_names": (
+            "nivel_lista",
+            "nivel_crear",
+            "nivel_editar",
+            "nivel_eliminar",
+        ),
     },
     {
         "label": "Progresos",
@@ -58,6 +92,12 @@ MANAGEMENT_SECTIONS = (
         "list_url": "progreso_lista",
         "add_permission": "niveles.add_progreso",
         "create_url": "progreso_crear",
+        "active_url_names": (
+            "progreso_lista",
+            "progreso_crear",
+            "progreso_editar",
+            "progreso_eliminar",
+        ),
     },
     {
         "label": "Logros",
@@ -65,6 +105,12 @@ MANAGEMENT_SECTIONS = (
         "list_url": "logro_lista",
         "add_permission": "niveles.add_logro",
         "create_url": "logro_crear",
+        "active_url_names": (
+            "logro_lista",
+            "logro_crear",
+            "logro_editar",
+            "logro_eliminar",
+        ),
     },
     {
         "label": "Logros de usuarios",
@@ -72,6 +118,12 @@ MANAGEMENT_SECTIONS = (
         "list_url": "usuariologro_lista",
         "add_permission": "niveles.add_usuariologro",
         "create_url": "usuariologro_crear",
+        "active_url_names": (
+            "usuariologro_lista",
+            "usuariologro_crear",
+            "usuariologro_editar",
+            "usuariologro_eliminar",
+        ),
     },
 )
 

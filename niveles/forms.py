@@ -1,5 +1,6 @@
 from django import forms
 
+from .level_data import correct_option_id, level_options
 from .models import Level
 
 
@@ -31,11 +32,13 @@ class LevelForm(forms.ModelForm):
         }
         help_texts = {
             "data": (
-                'Objeto JSON visible para el jugador. Ejemplo: '
-                '{"options": [{"id": "a", "color": "#1E88E5"}]}'
+                'Objeto JSON visible. Ejemplo de opciones: '
+                '{"options": [{"id": "a", "color": "#1E88E5"}]}. '
+                "Para paletas: usa palette_options con id y colors."
             ),
             "solution": (
-                'Objeto JSON privado de validación. Ejemplo: {"option_id": "a"}'
+                'Objeto JSON privado. Ejemplo: {"option_id": "a"}; '
+                "también se acepta correct_option_id."
             ),
             "active": "Solo los niveles activos aparecen en el perfil del jugador.",
         }
@@ -51,3 +54,37 @@ class LevelForm(forms.ModelForm):
         if not isinstance(solution, dict):
             raise forms.ValidationError("La solución debe ser un objeto JSON.")
         return solution
+
+    def clean(self):
+        cleaned_data = super().clean()
+        kind = cleaned_data.get("kind")
+        data = cleaned_data.get("data")
+        solution = cleaned_data.get("solution")
+        if not data or not solution or kind in {
+            "mix",
+            "rgb",
+            "temperature",
+            "saturation",
+        }:
+            return cleaned_data
+
+        options = level_options(data)
+        if not options:
+            self.add_error(
+                "data",
+                "Este tipo de nivel necesita opciones o paletas con un identificador.",
+            )
+            return cleaned_data
+
+        correct_id = correct_option_id(solution)
+        if correct_id is None:
+            self.add_error(
+                "solution",
+                "Indica option_id o correct_option_id para la respuesta correcta.",
+            )
+        elif correct_id not in {option["id"] for option in options}:
+            self.add_error(
+                "solution",
+                "La respuesta correcta debe coincidir con una opción de data.",
+            )
+        return cleaned_data

@@ -224,6 +224,58 @@ class PlayerGamePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "#1E88E5")
         self.assertNotContains(response, '"solution"')
+        self.assertNotContains(response, ">Panel</a>")
+
+    def test_staff_user_can_return_to_management_from_game(self):
+        admin = get_user_model().objects.create_user(
+            username="game-page-admin",
+            password="test-password",
+            is_staff=True,
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get("/gestion/niveles/jugar/1/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, ">Panel</a>")
+        self.assertContains(response, "/gestion/")
+
+    def test_palette_options_and_legacy_answer_key_work_for_level_three(self):
+        level = Level.objects.create(
+            number=3,
+            kind="branding",
+            title="Nivel 3",
+            instruction="Escoge la opción correcta.",
+            data={
+                "brand_name": "TechCorp",
+                "logo_placeholder": "logo_1.png",
+                "palette_options": [
+                    {"id": "a", "colors": ["#0000FF", "#00FFFF"]},
+                    {"id": "b", "colors": ["#FF0000", "#FFFF00"]},
+                ],
+            },
+            solution={"correct_option_id": "a"},
+        )
+        player, _ = Player.objects.get_or_create(user=self.user)
+        player.current_level_reached = level.number
+        player.save()
+
+        response = self.client.get(f"/gestion/niveles/jugar/{level.number}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "TechCorp")
+        self.assertContains(response, "Paleta A")
+        self.assertContains(response, "#0000FF")
+        self.assertContains(response, "#00FFFF")
+        self.assertNotContains(response, "correct_option_id")
+
+        response = self.client.post(
+            f"/gestion/niveles/jugar/{level.number}/",
+            {"answer": json.dumps({"option_id": "a"})},
+        )
+        self.assertRedirects(response, f"/gestion/niveles/jugar/{level.number}/")
+        player.refresh_from_db()
+        self.assertEqual(player.current_level_reached, 4)
 
     def test_correct_answer_updates_player_and_profile(self):
         response = self.client.post(

@@ -1,8 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Perfil de Cazador</title>
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
     <style>
         body { font-family: Arial, sans-serif; background: #1a252f; color: white; margin: 0; padding: 40px 20px; }
         .layout { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 350px) 1fr; gap: 24px; align-items: start; }
@@ -22,7 +24,8 @@
     </style>
 </head>
 <body>
-    <main class="layout">
+    {% include "usuarios/partials/app_navigation.html" %}
+    <main id="main-content" class="layout">
         <section class="card">
             <h1>¡Hola, {{ request.user.username }}! 🎮</h1>
             <p>Bienvenido a <strong>Cazadores de Pigmentos</strong>.</p>
@@ -34,10 +37,6 @@
                 <p>✨ <strong>Experiencia:</strong> {{ player.xp }} XP</p>
             </div>
 
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn-logout">Cerrar sesión</button>
-            </form>
         </section>
 
         <section class="levels">
