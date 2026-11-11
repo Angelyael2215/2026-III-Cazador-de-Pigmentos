@@ -11,11 +11,13 @@
         El usuario podrá volver a iniciar sesión.
     {% endif %}
 </p>
-<form method="post">
+<section class="confirm-card">
+<form method="post" class="form-actions">
     {% csrf_token %}
-    <button type="submit" class="btn">
+    <button type="submit" class="btn{% if accion == 'desactivar' %} btn--secondary{% endif %}">
         {% if accion == "desactivar" %}Confirmar desactivación{% else %}Confirmar activación{% endif %}
     </button>
-    <a href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+    <a class="btn btn--quiet" href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
 </form>
+</section>
 {% endblock %}

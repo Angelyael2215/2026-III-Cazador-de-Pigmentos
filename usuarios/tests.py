@@ -672,11 +672,27 @@ class UserManagementTests(TestCase):
             response,
             f'class="user-actions" aria-label="Acciones para {self.admin.username}"',
         )
-        self.assertContains(response, "user-action--primary")
-        self.assertContains(response, "user-action--security")
-        self.assertContains(response, "user-action--danger")
+        self.assertContains(response, "user-action")
+        self.assertContains(response, "btn--secondary")
+        self.assertContains(response, "btn--danger")
         self.assertContains(response, "Cambiar contraseña")
         self.assertContains(response, "Asignar roles")
+
+    def test_shared_admin_styles_are_loaded_and_responsive(self):
+        response = self.client.get("/gestion/usuarios/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "/static/usuarios/admin_dashboard.css")
+        stylesheet = (
+            Path(__file__).parent / "static" / "usuarios" / "admin_dashboard.css"
+        ).read_text()
+        self.assertIn(":active", stylesheet)
+        self.assertIn(":focus-visible", stylesheet)
+        self.assertIn("@media (max-width: 700px)", stylesheet)
+        self.assertIn(".table-responsive table", stylesheet)
+        self.assertIn(".admin-panel-body .btn--danger {", stylesheet)
+        self.assertIn("background: linear-gradient(#a83a2e, #79231b);", stylesheet)
+        self.assertIn(".admin-panel-body .btn--quiet {", stylesheet)
 
     def test_user_list_shows_account_metadata_without_password_data(self):
         user = get_user_model().objects.create_user(

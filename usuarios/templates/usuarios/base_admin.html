@@ -3,21 +3,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Administración Propia - Cazadores de Pigmentos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Administración | Cazadores de Pigmentos{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/admin_dashboard.css' %}">
     {% block extra_css %}{% endblock %}
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
-        .container { background: white; padding: 25px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
-        th { background-color: #2c3e50; color: white; }
-        .btn { background: #27ae60; color: white; padding: 8px 14px; border: none; text-decoration: none; border-radius: 4px; display: inline-block; cursor: pointer; }
-        .btn-edit { background: #f39c12; color: white; }
-        form div { margin-bottom: 12px; }
-    </style>
 </head>
-<body class="{% block body_class %}{% endblock %}">
+<body class="{% block body_class %}admin-panel-body{% endblock %}">
     {% include "usuarios/partials/app_navigation.html" %}
     <main id="main-content" class="container">
         {% block content %}{% endblock %}

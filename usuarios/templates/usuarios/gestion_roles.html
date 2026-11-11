@@ -2,30 +2,17 @@
 
 {% block content %}
 <h2>Gestión de roles</h2>
-<style>
-    .permission-category {
-        margin: 12px 0;
-        padding: 10px;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-    }
-    .permission-option {
-        display: block;
-        margin: 8px 0;
-    }
-    .permission-option small {
-        color: #5b6570;
-    }
-</style>
 
 {% if can_add %}
     <h3 id="create-role">Crear rol</h3>
-    <form method="post">
+    <form method="post" class="panel-form">
         {% csrf_token %}
         {{ form.non_field_errors }}
-        {{ form.name.label_tag }}
-        {{ form.name }}
-        {{ form.name.errors }}
+        <p>
+            {{ form.name.label_tag }}
+            {{ form.name }}
+            {{ form.name.errors }}
+        </p>
         {% if can_change %}
             <h4>{{ form.permissions.label }}</h4>
             {{ form.permissions.errors }}
@@ -48,15 +35,18 @@
                 </fieldset>
             {% endfor %}
         {% endif %}
-        <button type="submit" class="btn">Crear rol</button>
+        <div class="form-actions">
+            <button type="submit" class="btn">Crear rol</button>
+        </div>
     </form>
 {% endif %}
 
 {% if can_view %}
     <hr>
     <h3>Roles existentes</h3>
-    <form method="get" role="search" aria-label="Buscar roles">
-        <label for="role-search">Nombre del rol</label>
+    <form method="get" class="panel-search" role="search" aria-label="Buscar roles">
+        <label for="role-search">
+            Nombre del rol
         <input
             type="search"
             id="role-search"
@@ -64,14 +54,15 @@
             value="{{ search_query }}"
             placeholder="Buscar por nombre"
         >
+        </label>
         <button type="submit" class="btn">Buscar</button>
         {% if has_role_filters %}
-            <a href="{% url 'gestion_roles' %}">Limpiar filtros</a>
+        <a class="btn btn--quiet" href="{% url 'gestion_roles' %}">Limpiar filtros</a>
         {% endif %}
     </form>
 
     <p role="status">Resultados: {{ total_results }}</p>
-    <div style="overflow-x: auto;">
+    <div class="panel-table-scroll">
         <table>
             <thead>
                 <tr>
@@ -114,7 +105,7 @@
                                 <a href="{% url 'editar_rol' rol.id %}" class="btn btn-edit">Editar</a>
                             {% endif %}
                             {% if can_delete %}
-                                <a href="{% url 'eliminar_rol' rol.id %}" class="btn">Eliminar</a>
+                                <a href="{% url 'eliminar_rol' rol.id %}" class="btn btn--danger">Eliminar</a>
                             {% endif %}
                         </td>
                     </tr>

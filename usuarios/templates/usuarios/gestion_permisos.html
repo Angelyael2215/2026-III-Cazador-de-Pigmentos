@@ -1,22 +1,23 @@
 {% extends 'usuarios/base_admin.html' %}
 {% block content %}
-<div class="container mt-4">
+<section class="admin-page">
     <h2>Catálogo de Permisos del Sistema</h2>
     <p class="text-muted">Consulta los permisos generados por Django a partir de los modelos y migraciones. Los permisos se asignan desde los roles o desde la cuenta de un usuario.</p>
 
-    <form method="get" class="mb-4">
-        <label for="permission-search">Buscar por etiqueta, código técnico, modelo o aplicación</label>
-        <input
-            id="permission-search"
-            type="search"
-            name="q"
-            value="{{ query }}"
-            placeholder="Ejemplo: Ver perfil de usuario o usuarios.add_perfilusuario"
-            class="form-control"
-        >
-        <button type="submit" class="btn btn-primary">Buscar</button>
+    <form method="get" class="panel-search">
+        <label for="permission-search">
+            Buscar por etiqueta, código técnico, modelo o aplicación
+            <input
+                id="permission-search"
+                type="search"
+                name="q"
+                value="{{ query }}"
+                placeholder="Ejemplo: Ver perfil de usuario o usuarios.add_perfilusuario"
+            >
+        </label>
+        <button type="submit" class="btn">Buscar</button>
         {% if query %}
-            <a href="{% url 'gestion_permisos' %}" class="btn btn-secondary">Limpiar búsqueda</a>
+            <a href="{% url 'gestion_permisos' %}" class="btn btn--quiet">Limpiar búsqueda</a>
         {% endif %}
     </form>
 
@@ -30,24 +31,26 @@
                     <h4>Modelo: {{ model.name }}</h4>
                     {% for category in model.categories %}
                         <h5>{{ category.name }}</h5>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th scope="col">Permiso</th>
-                                    <th scope="col">Descripción funcional</th>
-                                    <th scope="col">Código técnico</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in category.permissions %}
+                        <div class="panel-table-scroll">
+                            <table>
+                                <thead>
                                     <tr>
-                                        <td><strong>{{ item.label }}</strong></td>
-                                        <td>{{ item.description }} <span class="text-muted">({{ item.permission.name }})</span></td>
-                                        <td><code>{{ item.permission.content_type.app_label }}.{{ item.permission.codename }}</code></td>
+                                        <th scope="col">Permiso</th>
+                                        <th scope="col">Descripción funcional</th>
+                                        <th scope="col">Código técnico</th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {% for item in category.permissions %}
+                                        <tr>
+                                            <td><strong>{{ item.label }}</strong></td>
+                                            <td>{{ item.description }} <span class="text-muted">({{ item.permission.name }})</span></td>
+                                            <td><code>{{ item.permission.content_type.app_label }}.{{ item.permission.codename }}</code></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     {% endfor %}
                 </div>
             {% endfor %}
@@ -55,5 +58,5 @@
     {% empty %}
         <p>No se encontraron permisos que coincidan con la búsqueda.</p>
     {% endfor %}
-</div>
+</section>
 {% endblock %}

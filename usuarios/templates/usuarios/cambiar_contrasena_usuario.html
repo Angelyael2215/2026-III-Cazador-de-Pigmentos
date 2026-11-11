@@ -3,10 +3,13 @@
 {% block content %}
 <h2>Cambiar contraseña de {{ usuario_obj.username }}</h2>
 <p>Define una nueva contraseña. La contraseña actual no se muestra ni se solicita.</p>
-<form method="post">
+<form method="post" class="panel-form">
     {% csrf_token %}
+    {{ form.non_field_errors }}
     {{ form.as_p }}
-    <button type="submit" class="btn">Guardar contraseña</button>
-    <a href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+    <div class="form-actions">
+        <button type="submit" class="btn">Guardar contraseña</button>
+        <a class="btn btn--quiet" href="{% url 'gestion_usuarios_roles' %}">Cancelar</a>
+    </div>
 </form>
 {% endblock %}
