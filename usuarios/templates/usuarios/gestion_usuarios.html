@@ -100,9 +100,12 @@
         </select>
 
         <button type="submit" class="btn">Aplicar filtros</button>
-        <a href="{% url 'gestion_usuarios_roles' %}">Limpiar</a>
+        {% if has_user_filters %}
+            <a href="{% url 'gestion_usuarios_roles' %}">Limpiar filtros</a>
+        {% endif %}
     </form>
 
+    <p role="status">Resultados: {{ total_results }}</p>
     <div class="table-responsive" style="overflow-x: auto;">
         <table>
             <thead>
@@ -180,10 +183,37 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7">No hay usuarios que coincidan con los filtros.</td>
+                        <td colspan="7">
+                            {% if has_user_filters and total_results == 0 %}
+                                No hay usuarios que coincidan con los filtros.
+                                <a href="{% url 'gestion_usuarios_roles' %}">Limpiar filtros</a>
+                            {% elif total_results > 0 %}
+                                No hay usuarios en esta página.
+                            {% elif has_unfiltered_users %}
+                                No hay usuarios que coincidan con los filtros.
+                                <a href="{% url 'gestion_usuarios_roles' %}">Limpiar filtros</a>
+                            {% else %}
+                                Todavía no hay usuarios registrados.
+                                {% if can_add_user %}
+                                    <a href="{% url 'crear_usuario' %}">Crear el primer usuario</a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
-</table>
+        </table>
+    </div>
+    {% if is_paginated %}
+        <nav aria-label="Paginación de usuarios">
+            {% if page_obj.has_previous %}
+                <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+            {% endif %}
+            <span>Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+            {% endif %}
+        </nav>
+    {% endif %}
 {% endif %}
 {% endblock %}

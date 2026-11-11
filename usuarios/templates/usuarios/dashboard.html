@@ -1,56 +1,76 @@
 {% extends 'usuarios/base_admin.html' %}
+{% load static %}
+
+{% block title %}Panel de administración | Cazadores de Pigmentos{% endblock %}
+{% block body_class %}admin-dashboard-body{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'usuarios/admin_dashboard.css' %}">
+{% endblock %}
 
 {% block content %}
-<h2>{% if is_administrator %}Panel de administración{% else %}Vistas disponibles{% endif %} - Cazadores de Pigmentos</h2>
-<p>Bienvenido{% if is_administrator %} al panel de administración{% else %}. Estas son las secciones habilitadas para tu usuario{% endif %}.</p>
-
-<div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;">
-    {% if is_administrator %}
-        <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
-            <h3>1. Permisos</h3>
-            <p style="font-size: 2em; margin: 10px 0; font-weight: bold;">{{ total_permisos }}</p>
-            <p>Acciones registradas en el juego</p>
-            <a href="{% url 'gestion_permisos' %}" class="btn">Gestionar Permisos</a>
+<section class="admin-dashboard" aria-labelledby="dashboard-title">
+    <header class="dashboard-heading">
+        <span class="dashboard-heading__icon" aria-hidden="true">⚒️</span>
+        <div>
+            <p class="dashboard-eyebrow">Cazadores de Pigmentos</p>
+            <h1 id="dashboard-title">
+                {% if is_administrator %}Panel de administración{% else %}Vistas disponibles{% endif %}
+            </h1>
+            <p class="dashboard-intro">
+                Bienvenido{% if is_administrator %} al panel de administración{% else %}. Estas son las secciones habilitadas para tu usuario{% endif %}.
+            </p>
         </div>
+    </header>
 
-        <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
-            <h3>2. Roles</h3>
-            <p style="font-size: 2em; margin: 10px 0; font-weight: bold;">{{ total_roles }}</p>
-            <p>Grupos de acceso definidos</p>
-            <a href="{% url 'gestion_roles' %}" class="btn">Gestionar Roles</a>
-        </div>
+    <div class="dashboard-cards">
+        {% if is_administrator %}
+            <article class="dashboard-card dashboard-card--permissions">
+                <h2><span aria-hidden="true">🗝️</span> Permisos</h2>
+                <p class="dashboard-card__count">{{ total_permisos }}</p>
+                <p class="dashboard-card__description">Acciones registradas en el juego</p>
+                <a href="{% url 'gestion_permisos' %}" class="dashboard-card__action">Gestionar permisos</a>
+            </article>
 
-        <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
-            <h3>3. Usuarios</h3>
-            <p style="font-size: 2em; margin: 10px 0; font-weight: bold;">{{ total_usuarios }}</p>
-            <p>Usuarios con roles asignados</p>
-            <a href="{% url 'gestion_usuarios_roles' %}" class="btn">Gestionar Usuarios</a>
-        </div>
-    {% endif %}
+            <article class="dashboard-card dashboard-card--roles">
+                <h2><span aria-hidden="true">🎭</span> Roles</h2>
+                <p class="dashboard-card__count">{{ total_roles }}</p>
+                <p class="dashboard-card__description">Grupos de acceso definidos</p>
+                <a href="{% url 'gestion_roles' %}" class="dashboard-card__action">Gestionar roles</a>
+            </article>
 
-    {% for section in management_sections %}
-        <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
-            <h3>{{ section.label }}</h3>
-            {% if section.can_view %}
-                <a href="{% url section.list_url %}" class="btn">Ver {{ section.label }}</a>
-            {% endif %}
-            {% if section.can_add %}
-                <a href="{% url section.create_url %}" class="btn">Crear</a>
-            {% endif %}
-        </div>
-    {% empty %}
-        {% if not is_administrator %}
-            <p>No tienes permisos de gestión asignados.</p>
+            <article class="dashboard-card dashboard-card--users">
+                <h2><span aria-hidden="true">🧑‍🤝‍🧑</span> Usuarios</h2>
+                <p class="dashboard-card__count">{{ total_usuarios }}</p>
+                <p class="dashboard-card__description">Cuentas registradas en el juego</p>
+                <a href="{% url 'gestion_usuarios_roles' %}" class="dashboard-card__action">Gestionar usuarios</a>
+            </article>
+
+            <article class="dashboard-card dashboard-card--levels">
+                <h2><span aria-hidden="true">🗺️</span> Niveles del juego</h2>
+                <p class="dashboard-card__count">{{ total_niveles }}</p>
+                <p class="dashboard-card__description">Retos configurados para los jugadores</p>
+                <a href="{% url 'niveles_juego_lista' %}" class="dashboard-card__action">Gestionar niveles</a>
+            </article>
         {% endif %}
-    {% endfor %}
 
-    {% if is_administrator %}
-        <div style="background: #e9ecef; padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
-            <h3>Niveles del juego</h3>
-            <p style="font-size: 2em; margin: 10px 0; font-weight: bold;">{{ total_niveles }}</p>
-            <p>Retos configurados para los jugadores</p>
-            <a href="{% url 'niveles_juego_lista' %}" class="btn">Gestionar Niveles</a>
-        </div>
-    {% endif %}
-</div>
+        {% for section in management_sections %}
+            <article class="dashboard-card">
+                <h2><span aria-hidden="true">🎨</span> {{ section.label }}</h2>
+                <p class="dashboard-card__description">Acceso disponible según tus permisos efectivos.</p>
+                <div class="dashboard-card__actions">
+                    {% if section.can_view %}
+                        <a href="{% url section.list_url %}" class="dashboard-card__action">Ver {{ section.label }}</a>
+                    {% endif %}
+                    {% if section.can_add %}
+                        <a href="{% url section.create_url %}" class="dashboard-card__action dashboard-card__action--secondary">Crear</a>
+                    {% endif %}
+                </div>
+            </article>
+        {% empty %}
+            {% if not is_administrator %}
+                <p class="dashboard-empty">No tienes permisos de gestión asignados.</p>
+            {% endif %}
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

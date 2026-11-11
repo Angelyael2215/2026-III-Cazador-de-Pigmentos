@@ -19,7 +19,7 @@
 </style>
 
 {% if can_add %}
-    <h3>Crear rol</h3>
+    <h3 id="create-role">Crear rol</h3>
     <form method="post">
         {% csrf_token %}
         {{ form.non_field_errors }}
@@ -65,9 +65,12 @@
             placeholder="Buscar por nombre"
         >
         <button type="submit" class="btn">Buscar</button>
-        <a href="{% url 'gestion_roles' %}">Limpiar</a>
+        {% if has_role_filters %}
+            <a href="{% url 'gestion_roles' %}">Limpiar filtros</a>
+        {% endif %}
     </form>
 
+    <p role="status">Resultados: {{ total_results }}</p>
     <div style="overflow-x: auto;">
         <table>
             <thead>
@@ -117,11 +120,37 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="4">No hay roles que coincidan con la búsqueda.</td>
+                        <td colspan="4">
+                            {% if has_role_filters and total_results == 0 %}
+                                Ningún rol coincide con la búsqueda.
+                                <a href="{% url 'gestion_roles' %}">Limpiar filtros</a>
+                            {% elif total_results > 0 %}
+                                No hay roles en esta página.
+                            {% elif has_unfiltered_roles %}
+                                Ningún rol coincide con la búsqueda.
+                                <a href="{% url 'gestion_roles' %}">Limpiar filtros</a>
+                            {% else %}
+                                Todavía no hay roles.
+                                {% if can_add %}
+                                    <a href="#create-role">Crear el primer rol</a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% if is_paginated %}
+        <nav aria-label="Paginación de roles">
+            {% if page_obj.has_previous %}
+                <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+            {% endif %}
+            <span>Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+            {% endif %}
+        </nav>
+    {% endif %}
 {% endif %}
 {% endblock %}

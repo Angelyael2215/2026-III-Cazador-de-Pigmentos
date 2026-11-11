@@ -8,17 +8,19 @@
     
     <!-- Tus estilos CSS globales -->
     <link rel="stylesheet" href="{% static 'usuarios/css/neobrutalism.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    {% include "usuarios/partials/app_navigation.html" %}
     <!-- Barra de navegación general (opcional) -->
     <header style="padding: 20px; border-bottom: 3px solid black; background: #fff; margin-bottom: 30px;">
         <h2 style="margin: 0; text-transform: uppercase;">🎨 Cazadores de Pigmentos</h2>
     </header>
 
     <!-- Contenido dinámico que cambiará según la página -->
-    <main>
+    <main id="main-content">
         {% block content %}
         {% endblock %}
     </main>

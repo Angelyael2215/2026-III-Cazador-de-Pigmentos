@@ -621,3 +621,101 @@ class LevelPermissionMatrixTests(TestCase):
         )
         self.assertIn(response.status_code, (302, 403))
         self.assertFalse(Level.objects.filter(number=2).exists())
+
+
+class UserAchievementListTests(TestCase):
+    def setUp(self):
+        self.admin = get_user_model().objects.create_user(
+            username="achievement-list-admin",
+            is_staff=True,
+        )
+        self.client.force_login(self.admin)
+        self.owner = get_user_model().objects.create_user(
+            username="achievement-owner",
+        )
+
+    def test_user_achievement_search_filters_and_pagination_preserve_get(self):
+        achievements = []
+        for index in range(22):
+            achievement = Logro.objects.create(
+                nombre_logro=f"Achievement {index:02}",
+                descripcion="Test achievement",
+            )
+            achievements.append(achievement)
+            UsuarioLogro.objects.create(usuario=self.owner, logro=achievement)
+        other_user = get_user_model().objects.create_user(
+            username="other-achievement-owner",
+        )
+        other_achievement = Logro.objects.create(
+            nombre_logro="Achievement for another user",
+            descripcion="Not part of this filter",
+        )
+        UsuarioLogro.objects.create(
+            usuario=other_user,
+            logro=other_achievement,
+        )
+
+        response = self.client.get(
+            "/gestion/niveles/usuarios-logros/",
+            {"q": "Achievement", "usuario": self.owner.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["active_list_filters"],
+            {"usuario": str(self.owner.pk)},
+        )
+        self.assertEqual(response.context["total_results"], 22)
+        self.assertEqual(len(response.context["rows"]), 20)
+        self.assertContains(response, "Resultados: 22")
+        self.assertContains(response, "Siguiente")
+        self.assertContains(response, f"usuario={self.owner.pk}")
+        self.assertContains(response, "q=Achievement")
+
+        response = self.client.get(
+            "/gestion/niveles/usuarios-logros/",
+            {
+                "q": "Achievement",
+                "usuario": self.owner.pk,
+                "logro": achievements[3].pk,
+            },
+        )
+        self.assertEqual(response.context["total_results"], 1)
+        self.assertEqual(len(response.context["rows"]), 1)
+        self.assertContains(response, achievements[3].nombre_logro)
+        self.assertNotIn(
+            other_achievement,
+            [item.logro for item in response.context["object_list"]],
+        )
+
+        response = self.client.get(
+            "/gestion/niveles/usuarios-logros/",
+            {"q": "missing-achievement"},
+        )
+        self.assertEqual(response.context["total_results"], 0)
+        self.assertContains(response, "No hay resultados que coincidan")
+        self.assertContains(response, "Limpiar filtros")
+
+    def test_empty_user_achievement_list_offers_creation_only_with_permission(self):
+        response = self.client.get("/gestion/niveles/usuarios-logros/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Todavía no hay registros.")
+        self.assertContains(response, "Crear el primer registro")
+
+        reader = get_user_model().objects.create_user(
+            username="achievement-list-reader",
+        )
+        view_permission = Permission.objects.get(
+            content_type__app_label="niveles",
+            codename="view_usuariologro",
+        )
+        reader.user_permissions.add(view_permission)
+        self.client.force_login(reader)
+
+        response = self.client.get("/gestion/niveles/usuarios-logros/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Todavía no hay registros.")
+        self.assertNotContains(response, "Crear registro")
+        self.assertNotContains(response, "Crear el primer registro")

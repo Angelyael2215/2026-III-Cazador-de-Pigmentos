@@ -1,5 +1,6 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.contrib.auth import get_user_model
 
 from usuarios.crud_mixins import (
     CrudDeleteMixin,
@@ -14,6 +15,7 @@ class NivelListView(CrudListContextMixin, ListView):
     model = Nivel
     permission_required = "niveles.view_nivel"
     route_prefix = "nivel"
+    search_fields = ("nombre", "numero", "descripcion")
 
 
 class NivelCreateView(CrudFormMixin, CreateView):
@@ -43,6 +45,7 @@ class ProgresoListView(CrudListContextMixin, ListView):
     model = Progreso
     permission_required = "niveles.view_progreso"
     route_prefix = "progreso"
+    search_fields = ("usuario__username", "nivel__nombre", "puntaje")
 
 
 class ProgresoCreateView(CrudFormMixin, CreateView):
@@ -72,6 +75,7 @@ class LogroListView(CrudListContextMixin, ListView):
     model = Logro
     permission_required = "niveles.view_logro"
     route_prefix = "logro"
+    search_fields = ("nombre_logro", "descripcion")
 
 
 class LogroCreateView(CrudFormMixin, CreateView):
@@ -101,6 +105,29 @@ class UsuarioLogroListView(CrudListContextMixin, ListView):
     model = UsuarioLogro
     permission_required = "niveles.view_usuariologro"
     route_prefix = "usuariologro"
+    search_fields = (
+        "usuario__username",
+        "usuario__email",
+        "logro__nombre_logro",
+    )
+
+    def get_list_filters(self):
+        return {
+            "usuario": (
+                "usuario_id",
+                "Usuario",
+                get_user_model().objects.order_by("username").values_list(
+                    "pk", "username"
+                ),
+            ),
+            "logro": (
+                "logro_id",
+                "Logro",
+                Logro.objects.order_by("nombre_logro").values_list(
+                    "pk", "nombre_logro"
+                ),
+            ),
+        }
 
 
 class UsuarioLogroCreateView(CrudFormMixin, CreateView):
