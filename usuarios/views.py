@@ -26,7 +26,11 @@ from niveles.models import Level, LevelProgress, Nivel, Player
 
 # FUNCIÓN DE VERIFICACIÓN
 def es_administrador(user):
-    return user.is_authenticated and (user.is_superuser or user.is_staff)
+    return (
+        user.is_authenticated
+        and user.is_active
+        and (user.is_superuser or user.is_staff)
+    )
 
 
 #  VISTA DE REGISTRO
@@ -89,6 +93,8 @@ def mapa_niveles(request):
     niveles = Nivel.objects.all().order_by("numero")
     return render(request, "usuarios/mapa.html", {"niveles": niveles})
 
+def is_admin(user):
+    return es_administrador(user)
 @login_required
 def ajustes_jugador(request):
     ajustes, _ = EvaluacionAccesibilidad.objects.get_or_create(

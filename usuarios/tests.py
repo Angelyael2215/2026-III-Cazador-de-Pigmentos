@@ -4,7 +4,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
 
-from .models import PerfilUsuario
+from .models import EvaluacionAccesibilidad, PerfilUsuario
+from .permissions import get_management_sections, has_management_access
+from .views import es_administrador
 
 
 class ProfilePermissionTests(TestCase):
@@ -308,3 +310,114 @@ class ProfilePermissionTests(TestCase):
         self.assertContains(response, "Editar")
         self.assertContains(response, "Eliminar")
         self.assertContains(response, "Ver perfil de usuario")
+
+    def test_inactive_accounts_never_get_management_access(self):
+        inactive_staff = get_user_model().objects.create_user(
+            username="inactive-staff",
+            is_staff=True,
+            is_active=False,
+        )
+        inactive_superuser = get_user_model().objects.create_superuser(
+            username="inactive-superuser",
+            email="inactive-superuser@example.com",
+            password="test-password",
+            is_active=False,
+        )
+        inactive_reader = get_user_model().objects.create_user(
+            username="inactive-reader",
+            is_active=False,
+        )
+        reader_group = Group.objects.create(name="inactive-reader-role")
+        reader_group.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="usuarios",
+                codename="view_perfilusuario",
+            )
+        )
+        inactive_reader.groups.add(reader_group)
+
+        for user in (inactive_staff, inactive_superuser, inactive_reader):
+            with self.subTest(username=user.username):
+                self.assertFalse(es_administrador(user))
+                self.assertFalse(has_management_access(user))
+                self.assertEqual(get_management_sections(user), [])
+                self.client.force_login(user)
+                response = self.client.get("/gestion/perfiles/")
+                self.assertIn(response.status_code, (302, 403))
+
+        target = get_user_model().objects.create_user(username="role-target")
+        self.client.force_login(inactive_staff)
+        response = self.client.post(
+            f"/gestion/usuarios/{target.pk}/roles/",
+            {"groups": [reader_group.pk]},
+        )
+        self.assertIn(response.status_code, (302, 403))
+        target.refresh_from_db()
+        self.assertFalse(target.groups.exists())
+
+    def test_no_permission_user_cannot_use_management_urls_or_post_actions(self):
+        owner = get_user_model().objects.create_user(username="crud-owner")
+        profile = PerfilUsuario.objects.create(usuario=owner)
+        evaluation = EvaluacionAccesibilidad.objects.create(
+            usuario=owner,
+            color_fondo_hex="#FFFFFF",
+            color_texto_hex="#000000",
+            ratio_contraste="21.00",
+        )
+        role = Group.objects.create(name="protected-role")
+        target = get_user_model().objects.create_user(username="protected-user")
+        user = get_user_model().objects.create_user(username="no-management-access")
+        self.client.force_login(user)
+
+        paths = (
+            "/gestion/permisos/",
+            "/gestion/roles/",
+            f"/gestion/roles/{role.pk}/editar/",
+            f"/gestion/roles/{role.pk}/eliminar/",
+            "/gestion/usuarios/",
+            f"/gestion/usuarios/{target.pk}/roles/",
+            f"/gestion/usuarios/{target.pk}/permisos/",
+            "/gestion/perfiles/",
+            "/gestion/perfiles/nuevo/",
+            f"/gestion/perfiles/{profile.pk}/editar/",
+            f"/gestion/perfiles/{profile.pk}/eliminar/",
+            "/gestion/evaluaciones/",
+            "/gestion/evaluaciones/nueva/",
+            f"/gestion/evaluaciones/{evaluation.pk}/editar/",
+            f"/gestion/evaluaciones/{evaluation.pk}/eliminar/",
+            "/gestion/crear/",
+            f"/gestion/editar/{target.pk}/",
+            f"/gestion/eliminar/{target.pk}/",
+        )
+        for path in paths:
+            with self.subTest(method="GET", path=path):
+                response = self.client.get(path)
+                self.assertIn(response.status_code, (302, 403))
+            with self.subTest(method="POST", path=path):
+                response = self.client.post(path, {})
+                self.assertIn(response.status_code, (302, 403))
+
+    def test_group_and_individual_permissions_combine_for_real_actions(self):
+        user = get_user_model().objects.create_user(username="mixed-permissions")
+        reader_group = Group.objects.create(name="mixed-permissions-reader")
+        reader_group.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="usuarios",
+                codename="view_perfilusuario",
+            )
+        )
+        user.groups.add(reader_group)
+        user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="usuarios",
+                codename="add_perfilusuario",
+            )
+        )
+        self.client.force_login(user)
+
+        listing = self.client.get("/gestion/perfiles/")
+        create_form = self.client.get("/gestion/perfiles/nuevo/")
+
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(create_form.status_code, 200)
+        self.assertContains(listing, 'href="/gestion/perfiles/nuevo/"')
