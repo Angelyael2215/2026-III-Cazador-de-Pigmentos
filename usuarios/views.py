@@ -96,8 +96,24 @@ def bienvenida_jugador(request):
 
 @login_required
 def mapa_niveles(request):
-    niveles = Nivel.objects.all().order_by("numero")
-    return render(request, "usuarios/mapa.html", {"niveles": niveles})
+    player, _ = Player.objects.get_or_create(user=request.user)
+    progress_by_level = {
+        item.level_id: item
+        for item in LevelProgress.objects.filter(player=player)
+    }
+    levels = [
+        {
+            "level": level,
+            "unlocked": level.number <= player.current_level_reached,
+            "completed": (
+                progress_by_level[level.pk].completed
+                if level.pk in progress_by_level
+                else False
+            ),
+        }
+        for level in Level.objects.filter(active=True, number__lte=25).order_by("number")
+    ]
+    return render(request, "usuarios/mapa.html", {"levels": levels})
 
 def is_admin(user):
     return es_administrador(user)
@@ -366,23 +382,8 @@ def asignar_roles_usuario(request, user_id):
 
 @login_required
 def detalle_nivel(request, numero_nivel):
-    if numero_nivel in [1]:
-        template_name = 'niveles/nivel_arrastrar.html'
-    elif numero_nivel in [2, 5, 6, 15, 20]:
-        template_name = 'niveles/nivel_deslizadores.html'
-    elif numero_nivel in [3, 7, 16]:
-        template_name = 'niveles/nivel_rueda.html'
-    elif numero_nivel in [4, 8, 12, 17, 23]:
-        template_name = 'niveles/nivel_seleccion.html'
-    elif numero_nivel in [9, 13, 18]:
-        template_name = 'niveles/nivel_simulador.html'
-    else:  # Niveles 10, 11, 14, 19, 21, 22, 24, 25 (Jefe final / Alquimia / WCAG)
-        template_name = 'niveles/nivel_auditor.html'
-
-    context = {
-        'numero_nivel': numero_nivel,
-    }
-    return render(request, template_name, context)
+    get_object_or_404(Level, number=numero_nivel, active=True)
+    return redirect("jugar_nivel", number=numero_nivel)
 
 
 @user_passes_test(

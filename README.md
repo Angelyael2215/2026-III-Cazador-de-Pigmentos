@@ -94,6 +94,31 @@ La app ya cuenta con modelos `Nivel` y `Progreso` para su gestión actual. Los
 modelos `Level`, `Player` y `LevelProgress` se mantienen separados para esta
 API autenticada con Firebase y no alteran esos flujos existentes.
 
+## Cargar la ruta jugable
+
+Después de aplicar las migraciones, carga las 25 pruebas iniciales:
+
+```bash
+python manage.py seed_game_levels
+```
+
+El comando es idempotente y no reemplaza niveles existentes. Si alguno de los
+números reservados del 1 al 25 ya tiene contenido diferente, la carga normal se
+cancela completa. Para conservar ese nivel y cargar los demás, ejecuta:
+
+```bash
+python manage.py seed_game_levels --skip-conflicts
+```
+
+Cada nivel nuevo incluye su propio enunciado, colores/opciones y solución
+privada. Las respuestas se validan en el servidor y los intentos, completados,
+XP y pigmentos se guardan por jugador.
+
+Los jugadores pueden entrar desde el mapa o su perfil. Las rutas antiguas de
+nivel redirigen al nuevo flujo basado en la base de datos. Para crear o editar
+retos después de la carga, usa el panel **Niveles del juego**; no se necesita
+una migración de esquema para cambiar preguntas o colores.
+
 ## Modelos Principales (ORM)
 * **Jugador:** Almacena la información de los usuarios registrados.
 * **Mapa:** (Describe aquí lo que hará tu modelo de mapas).
