@@ -66,6 +66,32 @@ def group_permissions_by_action(permissions):
     ]
 
 
+def group_permissions_by_app_and_action(permissions):
+    applications = {}
+    for permission in permissions:
+        app_label = permission.content_type.app_label
+        application = applications.setdefault(
+            app_label,
+            {"application": app_label, "categories": {}},
+        )
+        description = describe_permission(permission)
+        category = application["categories"].setdefault(
+            description["category"],
+            {"name": description["category"], "permissions": []},
+        )
+        category["permissions"].append(
+            {"permission": permission, **description}
+        )
+
+    return [
+        {
+            "application": app["application"],
+            "categories": list(app["categories"].values()),
+        }
+        for app in applications.values()
+    ]
+
+
 class PermisoLimpioField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         return describe_permission(obj)["label"]

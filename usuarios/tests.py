@@ -635,3 +635,178 @@ class UserManagementTests(TestCase):
 
         target.refresh_from_db()
         self.assertTrue(target.is_active)
+
+
+class RoleManagementCrudTests(TestCase):
+    def setUp(self):
+        self.admin = get_user_model().objects.create_user(
+            username="role-crud-admin",
+            is_staff=True,
+        )
+        self.client.force_login(self.admin)
+        self.profile_view = Permission.objects.get(
+            content_type__app_label="usuarios",
+            codename="view_perfilusuario",
+        )
+        self.profile_add = Permission.objects.get(
+            content_type__app_label="usuarios",
+            codename="add_perfilusuario",
+        )
+
+    def test_role_search_counts_assigned_users_and_groups_permissions(self):
+        role = Group.objects.create(name="color-reviewers")
+        role.permissions.add(self.profile_view, self.profile_add)
+        member = get_user_model().objects.create_user(username="role-member")
+        member.groups.add(role)
+        get_user_model().objects.create_user(username="unrelated-member")
+        self.client.force_login(
+            get_user_model().objects.create_user(
+                username="role-reader",
+                is_staff=True,
+            )
+        )
+
+        response = self.client.get("/gestion/roles/", {"q": "color"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, role.name)
+        self.assertContains(response, "Usuarios asignados")
+        self.assertContains(response, "Ver perfil de usuario")
+        self.assertContains(response, "usuarios")
+        self.assertContains(response, 'name="q"')
+        self.assertContains(response, 'value="color"')
+        self.assertEqual(response.context["roles"].count(), 1)
+        self.assertEqual(response.context["roles"][0].user_count, 1)
+        self.assertNotContains(response, "unrelated-member")
+
+    def test_create_and_edit_role_persist_and_preselect_permissions(self):
+        Group.objects.create(name="taken-role")
+        response = self.client.post(
+            "/gestion/roles/",
+            {
+                "name": "taken-role",
+                "permissions": [self.profile_view.pk],
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'value="{self.profile_view.pk}"')
+        self.assertContains(response, "checked")
+
+        response = self.client.post(
+            "/gestion/roles/",
+            {
+                "name": "palette-reviewers",
+                "permissions": [self.profile_view.pk],
+            },
+        )
+        self.assertRedirects(response, "/gestion/roles/")
+        role = Group.objects.get(name="palette-reviewers")
+        self.assertQuerySetEqual(role.permissions.all(), [self.profile_view])
+
+        edit_page = self.client.get(f"/gestion/roles/{role.pk}/editar/")
+        self.assertEqual(edit_page.status_code, 200)
+        self.assertContains(
+            edit_page,
+            f'value="{self.profile_view.pk}"',
+        )
+        self.assertContains(edit_page, "checked")
+
+        response = self.client.post(
+            f"/gestion/roles/{role.pk}/editar/",
+            {
+                "name": "taken-role",
+                "permissions": [self.profile_view.pk, self.profile_add.pk],
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'value="{self.profile_view.pk}"')
+        self.assertContains(response, "checked")
+
+        response = self.client.post(
+            f"/gestion/roles/{role.pk}/editar/",
+            {
+                "name": "palette-editors",
+                "permissions": [self.profile_add.pk],
+            },
+        )
+        self.assertRedirects(response, "/gestion/roles/")
+        role.refresh_from_db()
+        self.assertEqual(role.name, "palette-editors")
+        self.assertQuerySetEqual(role.permissions.all(), [self.profile_add])
+
+    def test_assign_and_remove_multiple_roles_updates_effective_permissions(self):
+        user = get_user_model().objects.create_user(username="role-assignment-target")
+        first_role = Group.objects.create(name="profile-reader-role")
+        first_role.permissions.add(self.profile_view)
+        second_role = Group.objects.create(name="profile-creator-role")
+        second_role.permissions.add(self.profile_add)
+
+        response = self.client.post(
+            f"/gestion/usuarios/{user.pk}/roles/",
+            {"groups": [first_role.pk, second_role.pk]},
+        )
+        self.assertRedirects(response, "/gestion/usuarios/")
+        user = get_user_model().objects.get(pk=user.pk)
+        self.assertTrue(user.has_perm("usuarios.view_perfilusuario"))
+        self.assertTrue(user.has_perm("usuarios.add_perfilusuario"))
+
+        response = self.client.post(
+            f"/gestion/usuarios/{user.pk}/roles/",
+            {"groups": [second_role.pk]},
+        )
+        self.assertRedirects(response, "/gestion/usuarios/")
+        user = get_user_model().objects.get(pk=user.pk)
+        self.assertFalse(user.has_perm("usuarios.view_perfilusuario"))
+        self.assertTrue(user.has_perm("usuarios.add_perfilusuario"))
+        self.assertQuerySetEqual(user.groups.all(), [second_role])
+
+    def test_role_operations_are_separately_protected(self):
+        role = Group.objects.create(name="protected-role")
+        reader = get_user_model().objects.create_user(username="role-only-reader")
+        read_role = Group.objects.create(name="role-read-only")
+        read_role.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="auth",
+                codename="view_group",
+            )
+        )
+        reader.groups.add(read_role)
+        self.client.force_login(reader)
+
+        listing = self.client.get("/gestion/roles/")
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, role.name)
+        self.assertNotContains(listing, "Crear rol")
+        self.assertNotContains(listing, "Editar")
+        self.assertNotContains(listing, "Eliminar")
+        for path, method in (
+            ("/gestion/roles/", "post"),
+            (f"/gestion/roles/{role.pk}/editar/", "get"),
+            (f"/gestion/roles/{role.pk}/editar/", "post"),
+            (f"/gestion/roles/{role.pk}/eliminar/", "get"),
+            (f"/gestion/roles/{role.pk}/eliminar/", "post"),
+            (f"/gestion/usuarios/{reader.pk}/roles/", "get"),
+            (f"/gestion/usuarios/{reader.pk}/roles/", "post"),
+        ):
+            with self.subTest(path=path, method=method):
+                response = getattr(self.client, method)(path, {})
+                self.assertIn(response.status_code, (302, 403))
+
+    def test_role_deletion_requires_confirmation_and_preserves_user(self):
+        role = Group.objects.create(name="removable-role")
+        user = get_user_model().objects.create_user(username="role-member-account")
+        user.groups.add(role)
+
+        confirmation = self.client.get(f"/gestion/roles/{role.pk}/eliminar/")
+        self.assertEqual(confirmation.status_code, 200)
+        self.assertContains(confirmation, "Las cuentas de")
+        self.assertContains(confirmation, "no se eliminarán")
+        role.refresh_from_db()
+        user.refresh_from_db()
+
+        response = self.client.post(f"/gestion/roles/{role.pk}/eliminar/")
+        self.assertRedirects(response, "/gestion/roles/")
+        self.assertFalse(Group.objects.filter(pk=role.pk).exists())
+        self.assertTrue(get_user_model().objects.filter(pk=user.pk).exists())
+        user.refresh_from_db()
+        self.assertFalse(user.groups.exists())
