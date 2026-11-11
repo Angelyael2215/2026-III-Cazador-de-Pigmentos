@@ -3,41 +3,100 @@
 {% block content %}
 <h2>{{ model_label }}</h2>
 
-{% if can_add %}
-    <p><a class="btn" href="{% url create_url %}">Crear</a></p>
+{% if search_fields_available or list_filter_options %}
+    <form method="get" role="search" aria-label="Buscar y filtrar {{ model_label|lower }}">
+        {% if search_fields_available %}
+            <label for="crud-search">Buscar</label>
+            <input
+                type="search"
+                id="crud-search"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Buscar {{ model_label|lower }}"
+            >
+        {% endif %}
+        {% for filter in list_filter_options %}
+            <label for="filter-{{ filter.parameter }}">{{ filter.label }}</label>
+            <select id="filter-{{ filter.parameter }}" name="{{ filter.parameter }}">
+                <option value="">Todos</option>
+                {% for value, label in filter.choices %}
+                    <option value="{{ value }}" {% if filter.selected == value|stringformat:"s" %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endfor %}
+        <button type="submit" class="btn">Aplicar filtros</button>
+        {% if has_list_filters %}
+            <a href="{% url list_url %}">Limpiar filtros</a>
+        {% endif %}
+    </form>
 {% endif %}
 
-<table>
-    <thead>
-        <tr>
-            {% for header in headers %}
-                <th>{{ header }}</th>
-            {% endfor %}
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in rows %}
+<p role="status">Resultados: {{ total_results }}</p>
+{% if can_add %}
+    <p><a class="btn" href="{% url create_url %}">Crear registro</a></p>
+{% endif %}
+
+<div class="crud-table-scroll" style="overflow-x: auto;">
+    <table>
+        <thead>
             <tr>
-                {% for value in row.values %}
-                    <td>{{ value|default_if_none:"—" }}</td>
+                {% for header in headers %}
+                    <th scope="col">{{ header }}</th>
                 {% endfor %}
-                <td>
-                    {% if can_change %}
-                        <a class="btn btn-edit"
-                           href="{% url update_url row.object.pk %}">Editar</a>
-                    {% endif %}
-                    {% if can_delete %}
-                        <a class="btn"
-                           href="{% url delete_url row.object.pk %}">Eliminar</a>
-                    {% endif %}
-                </td>
+                <th scope="col">Acciones</th>
             </tr>
-        {% empty %}
-            <tr>
-                <td colspan="20">No hay registros.</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    {% for value in row.values %}
+                        <td>{{ value|default_if_none:"—" }}</td>
+                    {% endfor %}
+                    <td>
+                        {% if can_change %}
+                            <a class="btn btn-edit"
+                               href="{% url update_url row.object.pk %}">Editar</a>
+                        {% endif %}
+                        {% if can_delete %}
+                            <a class="btn"
+                               href="{% url delete_url row.object.pk %}">Eliminar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="20">
+                        {% if has_list_filters %}
+                            No hay resultados que coincidan con los filtros.
+                        {% elif has_unfiltered_records %}
+                            No hay registros para mostrar en esta página.
+                        {% else %}
+                            Todavía no hay registros.
+                        {% endif %}
+                        {% if can_add and not has_unfiltered_records %}
+                            <a href="{% url create_url %}">Crear el primer registro</a>
+                        {% endif %}
+                        {% if has_list_filters %}
+                            <a href="{% url list_url %}">Limpiar filtros</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+    <nav aria-label="Paginación de {{ model_label|lower }}">
+        {% if page_obj.has_previous %}
+            <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+        {% endif %}
+        <span>Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+        {% endif %}
+    </nav>
+{% endif %}
 {% endblock %}

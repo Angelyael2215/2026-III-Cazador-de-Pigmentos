@@ -61,9 +61,15 @@ class ProfilePermissionTests(TestCase):
         self.assertContains(response, 'href="/gestion/jugador/"')
         self.assertContains(response, 'aria-current="page"')
         self.assertContains(response, "Cerrar sesión")
+        self.assertContains(response, 'method="post"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
         self.assertNotContains(response, ">Panel</a>")
         self.assertNotContains(response, ">Usuarios</a>")
         self.assertNotContains(response, ">Roles</a>")
+
+        logout_response = self.client.post("/gestion/logout/")
+        self.assertEqual(logout_response.status_code, 302)
+        self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_admin_navigation_includes_game_and_current_section(self):
         admin = get_user_model().objects.create_user(
@@ -617,6 +623,33 @@ class UserManagementTests(TestCase):
         self.assertContains(response, email_match.email)
         self.assertNotContains(response, selected.username)
 
+    def test_user_listing_paginates_twenty_and_preserves_filters(self):
+        for index in range(21):
+            get_user_model().objects.create_user(
+                username=f"team-member-{index:02}",
+                is_active=True,
+            )
+
+        response = self.client.get(
+            "/gestion/usuarios/",
+            {"q": "team-member", "estado": "activo"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_results"], 21)
+        self.assertEqual(len(response.context["usuarios"]), 20)
+        self.assertContains(
+            response,
+            "?q=team-member&amp;estado=activo&amp;page=2",
+        )
+
+        response = self.client.get(
+            "/gestion/usuarios/",
+            {"q": "team-member", "estado": "activo", "page": 2},
+        )
+        self.assertEqual(response.context["page_obj"].number, 2)
+        self.assertEqual(len(response.context["usuarios"]), 1)
+
     def test_user_listing_empty_results_renders_without_user_actions(self):
         response = self.client.get(
             "/gestion/usuarios/",
@@ -846,6 +879,27 @@ class RoleManagementCrudTests(TestCase):
         self.assertEqual(response.context["roles"].count(), 1)
         self.assertEqual(response.context["roles"][0].user_count, 1)
         self.assertNotContains(response, "unrelated-member")
+
+    def test_role_list_paginates_twenty_and_preserves_search(self):
+        for index in range(21):
+            Group.objects.create(name=f"palette-role-{index:02}")
+
+        response = self.client.get("/gestion/roles/", {"q": "palette-role"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_results"], 21)
+        self.assertEqual(len(response.context["roles"]), 20)
+        self.assertContains(
+            response,
+            "?q=palette-role&amp;page=2",
+        )
+
+        response = self.client.get(
+            "/gestion/roles/",
+            {"q": "palette-role", "page": 2},
+        )
+        self.assertEqual(response.context["page_obj"].number, 2)
+        self.assertEqual(len(response.context["roles"]), 1)
 
     def test_create_and_edit_role_persist_and_preselect_permissions(self):
         Group.objects.create(name="taken-role")

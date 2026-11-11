@@ -4,6 +4,7 @@ from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import SetPasswordForm
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.views.decorators.http import require_GET
 from django.db.models import Count, Q
 from .forms import (
@@ -184,10 +185,20 @@ def gestion_roles(request):
         )
         if search_query:
             roles = roles.filter(name__icontains=search_query)
+        unfiltered_count = Group.objects.count()
+        paginator = Paginator(roles, 20)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        roles = page_obj.object_list
         for role in roles:
             role.permission_groups = group_permissions_by_app_model_action(
                 role.permissions.all()
             )
+    else:
+        unfiltered_count = 0
+        paginator = Paginator([], 20)
+        page_obj = paginator.get_page(1)
+    role_query_params = request.GET.copy()
+    role_query_params.pop("page", None)
     can_add = user_has_permission(request.user, "auth.add_group")
     if request.method == 'POST' and not can_add:
         raise PermissionDenied
@@ -214,6 +225,13 @@ def gestion_roles(request):
             'can_change': can_change,
             'can_delete': user_has_permission(request.user, "auth.delete_group"),
             'search_query': search_query,
+            'page_obj': page_obj,
+            'paginator': paginator,
+            'is_paginated': page_obj.has_other_pages(),
+            'has_role_filters': bool(search_query),
+            'has_unfiltered_roles': unfiltered_count > 0,
+            'total_results': paginator.count,
+            'query_string': role_query_params.urlencode(),
         },
     )
 
@@ -242,11 +260,13 @@ def gestion_usuarios_roles(request):
     search_query = request.GET.get("q", "").strip()
     status_filter = request.GET.get("estado", "")
     role_filter = request.GET.get("rol", "")
+    unfiltered_count = 0
     if can_view:
         usuarios = User.objects.all().prefetch_related(
             'groups__permissions__content_type',
             'user_permissions__content_type',
         )
+        unfiltered_count = usuarios.count()
         if search_query:
             usuarios = usuarios.filter(
                 Q(username__icontains=search_query)
@@ -263,6 +283,9 @@ def gestion_usuarios_roles(request):
         else:
             role_filter = ""
 
+        paginator = Paginator(usuarios.order_by("username", "pk"), 20)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        usuarios = page_obj.object_list
         for usuario in usuarios:
             effective_permissions = {}
             for role in usuario.groups.all():
@@ -290,6 +313,14 @@ def gestion_usuarios_roles(request):
                 {**item, "sources": ", ".join(sorted(item["sources"]))}
                 for item in effective_permissions.values()
             ]
+    else:
+        paginator = Paginator([], 20)
+        page_obj = paginator.get_page(1)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    has_user_filters = bool(
+        search_query or status_filter or role_filter
+    )
     return render(
         request,
         'usuarios/gestion_usuarios.html',
@@ -308,6 +339,13 @@ def gestion_usuarios_roles(request):
                 user_has_permission(request.user, "auth.view_user")
                 or user_has_permission(request.user, "auth.change_user")
             ),
+            'page_obj': page_obj,
+            'paginator': paginator,
+            'is_paginated': page_obj.has_other_pages(),
+            'has_user_filters': has_user_filters,
+            'has_unfiltered_users': unfiltered_count > 0,
+            'total_results': paginator.count,
+            'query_string': query_params.urlencode(),
         },
     )
 

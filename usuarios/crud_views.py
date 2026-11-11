@@ -14,6 +14,7 @@ class PerfilListView(CrudListContextMixin, ListView):
     model = PerfilUsuario
     permission_required = "usuarios.view_perfilusuario"
     route_prefix = "perfil"
+    search_fields = ("usuario__username", "usuario__email")
 
 
 class PerfilCreateView(CrudFormMixin, CreateView):
@@ -43,6 +44,7 @@ class EvaluacionListView(CrudListContextMixin, ListView):
     model = EvaluacionAccesibilidad
     permission_required = "usuarios.view_evaluacionaccesibilidad"
     route_prefix = "evaluacion"
+    search_fields = ("usuario__username", "usuario__email")
 
 
 class EvaluacionCreateView(CrudFormMixin, CreateView):

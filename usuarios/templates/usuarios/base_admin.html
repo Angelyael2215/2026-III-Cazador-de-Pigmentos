@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Administración Propia - Cazadores de Pigmentos</title>
     <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
+    {% block extra_css %}{% endblock %}
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; }
         .container { background: white; padding: 25px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -16,7 +17,7 @@
         form div { margin-bottom: 12px; }
     </style>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     {% include "usuarios/partials/app_navigation.html" %}
     <main id="main-content" class="container">
         {% block content %}{% endblock %}
