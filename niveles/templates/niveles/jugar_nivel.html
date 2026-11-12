@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#173b3b">
     <title>Nivel {{ level.number }} · Cazadores de Pigmentos</title>
-    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
     <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'usuarios/global_background.css' %}">
 </head>
-<body class="adventure-game-page">
+<body class="adventure-game-page global-background">
 {% include "usuarios/partials/app_navigation.html" %}
 <main class="game-fullscreen" id="main-content" tabindex="-1">
     <header class="game-top-bar">

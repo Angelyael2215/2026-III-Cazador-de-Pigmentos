@@ -8,12 +8,13 @@
     
     <!-- Tus estilos CSS globales -->
     <link rel="stylesheet" href="{% static 'usuarios/css/neobrutalim.css' %}">
-    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
     <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/global_background.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=3">
     
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="global-background">
     {% include "usuarios/partials/app_navigation.html" %}
     <!-- Barra de navegación general (opcional) -->
     <header class="site-banner">

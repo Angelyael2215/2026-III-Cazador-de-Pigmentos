@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Administración | Cazadores de Pigmentos{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}">
-    <link rel="stylesheet" href="{% static 'usuarios/admin_dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/admin_dashboard.css' %}?v=9">
+    <link rel="stylesheet" href="{% static 'usuarios/global_background.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=3">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="{% block body_class %}admin-panel-body{% endblock %}">
+<body class="{% block body_class %}admin-panel-body{% endblock %} global-background">
     {% include "usuarios/partials/app_navigation.html" %}
     <main id="main-content" class="container">
         {% block content %}{% endblock %}

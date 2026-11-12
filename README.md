@@ -1,21 +1,96 @@
-# Cazador de Pigmentos - Backend 
+# Cazador de Pigmentos - Backend
 
 juego interactivo de combinacion de colores
 
 ## Tecnologías usadas
-* Django
-* Python
 
-## Instalación Local
-1. Clona el repositorio y crea un entorno virtual: `python -m venv venv`
-2. En Debian/Ubuntu, instala las dependencias de compilación de MySQL: `sudo apt install build-essential pkg-config default-libmysqlclient-dev`
-3. Activa el entorno virtual e instala los requerimientos: `pip install -r requirements.txt`
-4. Copia `.env.example` a `.env` y configura la clave, el nombre de la base de datos y las credenciales de MySQL.
-5. Crea en MySQL la base de datos indicada en `DB_NAME`.
-6. Aplica las migraciones: `python manage.py migrate`
-7. Levanta el servidor: `python manage.py runserver`
+- Django
+- Python
 
-En desarrollo, `runserver` activa la recarga automática al detectar cambios. `runserver --noreload` solo desactiva esa recarga; normalmente no es necesario y no corrige errores de configuración o dependencias. Para seguir ejecutando SQLite, establece `DB_ENGINE=sqlite3` (o elimina esa variable); el valor predeterminado también es SQLite.
+## Instalación local
+
+### Requisitos
+
+- Python 3.12 o posterior.
+- Git.
+- Docker Engine con el complemento `docker compose` para usar MySQL en un contenedor. También se puede usar SQLite sin instalar un servidor de base de datos.
+- En Debian/Ubuntu, las herramientas necesarias para compilar `mysqlclient`:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential pkg-config default-libmysqlclient-dev
+```
+
+### Obtener el proyecto e instalar dependencias
+
+```bash
+git clone <URL_DEL_REPOSITORIO>
+cd 2026-III-Cazador-de-Pigmentos
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+En Windows, activa el entorno con `.venv\\Scripts\\activate` en CMD o `.venv\\Scripts\\Activate.ps1` en PowerShell. Ejecuta los comandos `python` y `pip` siguientes con el entorno activado.
+Linux/macOS: source .venv/bin/activate
+
+Edita `.env` y define `DJANGO_SECRET_KEY` con una clave aleatoria privada.
+
+### Usar MySQL con Docker
+
+Arranca un servidor MySQL 8.4 con una base y usuario de desarrollo. Reemplaza las contraseñas de ejemplo por valores locales propios; usa los mismos valores en `.env`:
+
+```bash
+docker run -d \\
+  --name cazadores-mysql \\
+  --restart unless-stopped \\
+  -p 3306:3306 \\
+  -e MYSQL_DATABASE=cazadores \\
+  -e MYSQL_USER=cazadores \\
+  -e MYSQL_PASSWORD=cazadores_local_password \\
+  -e MYSQL_ROOT_PASSWORD=mysql_root_local_password \\
+  -v cazadores_mysql_data:/var/lib/mysql \\
+  mysql:8.4
+```
+
+La primera inicialización puede tardar unos segundos. Comprueba que el contenedor esté activo con `docker ps` y revisa sus mensajes con `docker logs cazadores-mysql`.
+
+En `.env`, configura la conexión:
+
+```dotenv
+DB_ENGINE=django.db.backends.mysql
+DB_NAME=cazadores
+DB_USER=cazadores
+DB_PASSWORD=cazadores_local_password
+DB_HOST=127.0.0.1
+DB_PORT=3306
+```
+
+El contenedor crea la base de datos al inicializarse. Si ya existe un contenedor con el nombre `cazadores-mysql`, no lo crees de nuevo: puedes volver a iniciarlo con `docker start cazadores-mysql`.
+
+### Usar SQLite en vez de MySQL
+
+No hace falta instalar ni arrancar Docker. En `.env`, configura `DB_ENGINE=sqlite3` o deja la variable vacía. Django usará `db.local.sqlite3` en la raíz del proyecto y las migraciones crearán sus tablas.
+
+### Inicializar Django y arrancar
+
+Con el entorno virtual activado, ejecuta desde la raíz del proyecto:
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Abre `http://127.0.0.1:8000/`. El servidor de desarrollo recarga automáticamente los cambios de código; `runserver --noreload` solo desactiva esa función y no corrige problemas de dependencias o configuración.
+
+Para cargar contenido inicial del juego, ejecuta `python manage.py seed_game_levels`. Para preparar las cuentas y roles demostrativos documentados más abajo, ejecuta `python manage.py demo_data load`. Estos datos se crean en la base configurada en `.env`.
+
+### Datos y copias de seguridad
+
+Las bases locales SQLite y `.env` están excluidos de Git. Clonar el repositorio e instalar dependencias no descarga los datos existentes: `migrate` crea el esquema, y los comandos de carga anteriores crean contenido inicial. Para trasladar una base poblada, exporta y restaura una copia de MySQL por separado, o transfiere de forma segura el archivo SQLite correspondiente. No subas copias de bases con datos privados, contraseñas ni secretos al repositorio.
 
 ## Datos ficticios para demostrar el panel
 
@@ -80,8 +155,8 @@ Por ejemplo, un nivel de opción múltiple puede guardar:
 {
   "data": {
     "options": [
-      {"id": "a", "color": "#1E88E5"},
-      {"id": "b", "color": "#E53935"}
+      { "id": "a", "color": "#1E88E5" },
+      { "id": "b", "color": "#E53935" }
     ]
   },
   "solution": {
@@ -120,5 +195,6 @@ retos después de la carga, usa el panel **Niveles del juego**; no se necesita
 una migración de esquema para cambiar preguntas o colores.
 
 ## Modelos Principales (ORM)
-* **Jugador:** Almacena la información de los usuarios registrados.
-* **Mapa:** (Describe aquí lo que hará tu modelo de mapas).
+
+- **Jugador:** Almacena la información de los usuarios registrados.
+- **Mapa:** (Describe aquí lo que hará tu modelo de mapas).

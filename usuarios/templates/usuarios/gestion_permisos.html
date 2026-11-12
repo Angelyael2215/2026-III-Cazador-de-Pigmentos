@@ -1,4 +1,5 @@
 {% extends 'usuarios/base_admin.html' %}
+{% block body_class %}admin-panel-body permission-catalog-body{% endblock %}
 {% block content %}
 <section class="admin-page">
     <h2>Catálogo de Permisos del Sistema</h2>
@@ -23,37 +24,31 @@
 
     <hr>
     <p>{{ permisos|length }} permiso{{ permisos|length|pluralize }} encontrado{{ permisos|length|pluralize }}.</p>
-    {% for application in permission_categories %}
-        <section class="card mb-4">
-            <h3>Aplicación: {{ application.name }}</h3>
-            {% for model in application.models %}
-                <div class="model-section">
-                    <h4>Modelo: {{ model.name }}</h4>
-                    {% for category in model.categories %}
-                        <h5>{{ category.name }}</h5>
-                        <div class="panel-table-scroll">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Permiso</th>
-                                        <th scope="col">Descripción funcional</th>
-                                        <th scope="col">Código técnico</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in category.permissions %}
-                                        <tr>
-                                            <td><strong>{{ item.label }}</strong></td>
-                                            <td>{{ item.description }} <span class="text-muted">({{ item.permission.name }})</span></td>
-                                            <td><code>{{ item.permission.content_type.app_label }}.{{ item.permission.codename }}</code></td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
+    {% for category in permission_action_categories %}
+        <section class="permission-action-banner" aria-labelledby="permission-action-{{ forloop.counter }}">
+            <h3 id="permission-action-{{ forloop.counter }}">{{ category.name }} <span>({{ category.permissions|length }})</span></h3>
+            <div class="panel-table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Permiso</th>
+                            <th scope="col">Modelo</th>
+                            <th scope="col">Descripción funcional</th>
+                            <th scope="col">Código técnico</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in category.permissions %}
+                            <tr>
+                                <td><strong>{{ item.label }}</strong></td>
+                                <td>{{ item.permission.content_type.name|capfirst }}</td>
+                                <td>{{ item.description }} <span class="text-muted">({{ item.permission.name }})</span></td>
+                                <td><code>{{ item.permission.content_type.app_label }}.{{ item.permission.codename }}</code></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
     {% empty %}
         <p>No se encontraron permisos que coincidan con la búsqueda.</p>

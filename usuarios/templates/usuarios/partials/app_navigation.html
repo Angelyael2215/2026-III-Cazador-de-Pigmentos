@@ -2,18 +2,41 @@
 <nav class="app-navigation" aria-label="Navegación principal">
     <div class="app-navigation__links">
         <a href="{% url 'bienvenida_jugador' %}"
-           {% if app_navigation_is_game_current %}aria-current="page"{% endif %}>Juego y perfil</a>
+           {% if app_navigation_is_game_current %}aria-current="page"{% endif %}>
+            <span class="app-navigation__icon" aria-hidden="true">🧭</span>
+            <span class="app-navigation__label">Juego y perfil</span>
+        </a>
         {% if app_has_management_access %}
             <a href="{% url 'dashboard_admin' %}"
-               {% if app_navigation_is_dashboard_current %}aria-current="page"{% endif %}>Panel</a>
+               {% if app_navigation_is_dashboard_current %}aria-current="page"{% endif %}>
+                <span class="app-navigation__icon" aria-hidden="true">🗺️</span>
+                <span class="app-navigation__label">Panel</span>
+            </a>
             {% for section in app_navigation_sections %}
                 <a href="{% url section.url_name %}"
-                   {% if section.is_current %}aria-current="page"{% endif %}>{{ section.label }}</a>
+                   {% if section.is_current %}aria-current="page"{% endif %}>
+                    <span class="app-navigation__icon" aria-hidden="true">
+                        {% if section.label == 'Permisos' %}🔑
+                        {% elif section.label == 'Roles' %}🏴‍☠️
+                        {% elif section.label == 'Usuarios' %}👥
+                        {% elif section.label == 'Perfiles' %}🧑‍🎨
+                        {% elif section.label == 'Evaluaciones de accesibilidad' %}🔍
+                        {% elif section.label == 'Niveles del juego' %}🗺️
+                        {% elif section.label == 'Niveles' %}🕯️
+                        {% elif section.label == 'Progresos' %}📜
+                        {% elif section.label == 'Logros' %}🏆
+                        {% elif section.label == 'Logros de usuarios' %}🥇
+                        {% else %}📌{% endif %}
+                    </span>
+                    <span class="app-navigation__label">{{ section.label }}</span>
+                </a>
             {% endfor %}
         {% endif %}
     </div>
+
     <div class="app-navigation__account">
         <span class="app-navigation__username">Usuario: {{ request.user.username }}</span>
+
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit">Cerrar sesión</button>

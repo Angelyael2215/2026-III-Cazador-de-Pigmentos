@@ -14,6 +14,7 @@ from .forms import (
 
     RegistroUsuarioForm,
     describe_permission,
+    group_permissions_by_action,
     group_permissions_by_app_model_action,
     search_permissions,
 )
@@ -178,7 +179,7 @@ def gestion_permisos(request):
         'usuarios/gestion_permisos.html',
         {
             'permisos': permisos,
-            'permission_categories': group_permissions_by_app_model_action(permisos),
+            'permission_action_categories': group_permissions_by_action(permisos),
             'query': query,
         },
     )
