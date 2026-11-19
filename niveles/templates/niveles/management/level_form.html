@@ -1,12 +1,164 @@
 {% extends "usuarios/base_admin.html" %}
 
 {% block content %}
-<h1>{{ page_title }}</h1>
-<p>La solución solo se usa en el servidor y no se muestra a los jugadores.</p>
-<form method="post">
+<section class="level-builder-page" aria-labelledby="level-builder-title">
+    <header class="level-builder-page__heading">
+        <p class="dashboard-eyebrow">Diseñador de retos</p>
+        <h1 id="level-builder-title">{{ page_title }}</h1>
+        <p>Completa los datos básicos y el formulario mostrará los campos del tipo de reto elegido.</p>
+    </header>
+
+    <form method="post" class="panel-form level-builder">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn" type="submit">Guardar nivel</button>
-    <a class="btn btn-edit" href="{% url 'niveles_juego_lista' %}">Cancelar</a>
-</form>
+        {{ form.non_field_errors }}
+
+        <section class="level-builder__basics" aria-labelledby="level-basics-title">
+            <h2 id="level-basics-title">Información del nivel</h2>
+            <div class="level-builder__grid">
+                <div class="level-builder__field">
+                    {{ form.number.label_tag }}
+                    {{ form.number }}
+                    {{ form.number.errors }}
+                </div>
+                <div class="level-builder__field">
+                    {{ form.kind.label_tag }}
+                    {{ form.kind }}
+                    {{ form.kind.errors }}
+                </div>
+                <div class="level-builder__field level-builder__field--wide">
+                    {{ form.title.label_tag }}
+                    {{ form.title }}
+                    {{ form.title.errors }}
+                </div>
+                <div class="level-builder__field level-builder__field--wide">
+                    {{ form.instruction.label_tag }}
+                    {{ form.instruction }}
+                    {{ form.instruction.errors }}
+                    <small>Explica el reto al jugador, sin revelar la respuesta.</small>
+                </div>
+                <div class="level-builder__field level-builder__field--checkbox">
+                    {{ form.active }}
+                    {{ form.active.label_tag }}
+                    {{ form.active.errors }}
+                </div>
+            </div>
+        </section>
+
+        <section class="level-builder__configuration" aria-labelledby="level-configuration-title">
+            <h2 id="level-configuration-title">Configuración del reto</h2>
+            <fieldset class="level-builder__group" data-level-kinds="mix temperature saturation gradient">
+                <legend>Colores de la prueba</legend>
+                <div class="level-builder__field">
+                    {{ form.colors.label_tag }}
+                    {{ form.colors }}
+                    {{ form.colors.help_text }}
+                    {{ form.colors.errors }}
+                </div>
+            </fieldset>
+
+            <fieldset class="level-builder__group" data-level-kinds="mix saturation">
+                <legend>Respuesta correcta</legend>
+                <div class="level-builder__field">
+                    {{ form.answer_colors.label_tag }}
+                    {{ form.answer_colors }}
+                    {{ form.answer_colors.errors }}
+                </div>
+            </fieldset>
+
+            <fieldset class="level-builder__group" data-level-kinds="temperature">
+                <legend>Clasificación de temperatura</legend>
+                <div class="level-builder__grid">
+                    <div class="level-builder__field">
+                        {{ form.warm_colors.label_tag }}
+                        {{ form.warm_colors }}
+                        {{ form.warm_colors.errors }}
+                    </div>
+                    <div class="level-builder__field">
+                        {{ form.cold_colors.label_tag }}
+                        {{ form.cold_colors }}
+                        {{ form.cold_colors.errors }}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="level-builder__group" data-level-kinds="rgb hex harmony contrast color_blindness albers">
+                <legend>Color objetivo o referencia</legend>
+                <div class="level-builder__field">
+                    {{ form.reference_color.label_tag }}
+                    {{ form.reference_color }}
+                    {{ form.reference_color.help_text }}
+                    {{ form.reference_color.errors }}
+                </div>
+            </fieldset>
+
+            <fieldset class="level-builder__group" data-level-kinds="branding">
+                <legend>Identidad de marca</legend>
+                <div class="level-builder__field">
+                    {{ form.brand_name.label_tag }}
+                    {{ form.brand_name }}
+                    {{ form.brand_name.errors }}
+                </div>
+            </fieldset>
+
+            <fieldset class="level-builder__group" data-level-kinds="branding gradient contrast harmony color_blindness hex albers atmosphere">
+                <legend>Opciones y respuesta correcta</legend>
+                <div class="level-builder__grid">
+                    <div class="level-builder__field">
+                        {{ form.options_text.label_tag }}
+                        {{ form.options_text }}
+                        {{ form.options_text.help_text }}
+                        {{ form.options_text.errors }}
+                    </div>
+                    <div class="level-builder__field">
+                        {{ form.correct_option.label_tag }}
+                        {{ form.correct_option }}
+                        {{ form.correct_option.errors }}
+                    </div>
+                </div>
+            </fieldset>
+        </section>
+
+        <details class="level-builder__advanced">
+            <summary>Configuración avanzada (JSON)</summary>
+            <p>Usa estos campos solo si necesitas una estructura especial. La configuración guiada de arriba tiene prioridad al guardar.</p>
+            <div class="level-builder__grid">
+                <div class="level-builder__field">
+                    {{ form.data.label_tag }}
+                    {{ form.data }}
+                    {{ form.data.help_text }}
+                    {{ form.data.errors }}
+                </div>
+                <div class="level-builder__field">
+                    {{ form.solution.label_tag }}
+                    {{ form.solution }}
+                    {{ form.solution.help_text }}
+                    {{ form.solution.errors }}
+                </div>
+            </div>
+        </details>
+
+        <div class="form-actions">
+            <button class="btn" type="submit">Guardar nivel</button>
+            <a class="btn btn-edit" href="{% url 'niveles_juego_lista' %}">Cancelar</a>
+        </div>
+    </form>
+</section>
+
+<script>
+    (function () {
+        const typeField = document.getElementById("id_kind");
+        const groups = document.querySelectorAll("[data-level-kinds]");
+        if (!typeField || !groups.length) return;
+
+        function updateGroups() {
+            groups.forEach(function (group) {
+                const kinds = group.dataset.levelKinds.split(/\s+/);
+                group.hidden = !kinds.includes(typeField.value);
+            });
+        }
+
+        typeField.addEventListener("change", updateGroups);
+        updateGroups();
+    }());
+</script>
 {% endblock %}

@@ -19,29 +19,51 @@
     box-sizing: border-box;
 }
 
+.icon {
+    display: inline-block;
+    width: 21px;
+    height: 21px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: middle;
+}
+
+.icon-library {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
 .app-navigation {
     position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(260px, 24.5%, 340px);
+    display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     width: 100%;
     max-width: 100%;
-    margin: 0 auto 20px;
-    min-height: 145px;
-    padding: 20px 2.1% 16px 2.8%;
-    background: url("images/dashboard-navigation-bar.png") center / 100% 100% no-repeat;
-    color: #1a0d05;
+    margin: 0 auto 16px;
+    padding: 8px clamp(12px, 2vw, 22px);
+    border: 1px solid #dce5dc;
+    border-radius: 0 0 14px 14px;
+    background: #245047;
+    color: #f7f8f3;
 }
 
 .app-navigation__links {
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
-    justify-content: space-between;
     gap: 4px;
     min-width: 0;
-    overflow-x: auto;
+    flex: 1 1 auto;
+    overflow: visible;
     scrollbar-width: none;
 }
 
@@ -49,46 +71,46 @@
     display: none;
 }
 
-.app-navigation__links a {
+.app-navigation__links > a,
+.app-navigation__management > summary {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    flex: 1 1 0;
-    min-width: 76px;
-    padding: 8px 6px 6px;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 68px;
+    padding: 6px 9px;
     border: 1px solid transparent;
-    border-radius: 6px;
-    color: #1a0d05;
-    font-family: "Trebuchet MS", Georgia, serif;
-    font-size: 0.92rem;
-    font-weight: 800;
+    border-radius: 11px;
+    color: #f7f8f3;
+    font-size: 0.78rem;
+    font-weight: 600;
     line-height: 1.15;
     text-align: center;
     text-decoration: none;
-    text-shadow: 0 1px 0 rgba(255, 246, 224, 0.7);
-    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.app-navigation__links a:hover,
-.app-navigation__links a[aria-current="page"] {
-    border-color: rgba(255, 245, 215, 0.85);
-    background: linear-gradient(180deg, rgba(235, 206, 152, 0.8) 0%, rgba(206, 170, 110, 0.9) 100%);
-    color: #0f0702;
-    box-shadow:
-        0 3px 6px rgba(44, 24, 12, 0.35),
-        inset 0 1px 1px rgba(255, 255, 255, 0.6);
+.app-navigation .app-navigation__links > a:not([aria-current="page"]) {
+    color: #f7f8f3;
+}
+
+.app-navigation__links > a:hover,
+.app-navigation__links > a[aria-current="page"],
+.app-navigation__management > summary:hover,
+.app-navigation__management[open] > summary {
+    border-color: rgb(255 255 255 / 26%);
+    background: rgb(255 255 255 / 12%);
+    color: #fff;
 }
 
 .app-navigation__icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 36px;
-    margin-bottom: 5px;
-    font-size: 1.75rem;
+    height: 22px;
+    margin-bottom: 2px;
     line-height: 1;
-    filter: drop-shadow(0 2px 2px rgba(44, 24, 12, 0.25));
 }
 
 .app-navigation__label {
@@ -98,7 +120,75 @@
     overflow: hidden;
 }
 
+.app-navigation__management {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.app-navigation__management > summary {
+    min-height: 100%;
+    cursor: pointer;
+    list-style: none;
+}
+
+.app-navigation__management > summary::-webkit-details-marker {
+    display: none;
+}
+
+.app-navigation__menu {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% + 8px);
+    right: 0;
+    display: grid;
+    width: min(320px, calc(100vw - 24px));
+    max-height: min(70vh, 480px);
+    gap: 3px;
+    padding: 8px;
+    overflow-y: auto;
+    border: 1px solid #d8e0d8;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 22px rgb(28 43 34 / 16%);
+}
+
+.app-navigation__menu a {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    min-height: 40px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    color: #35493c;
+    font-size: 0.86rem;
+    font-weight: 500;
+    line-height: 1.25;
+    text-decoration: none;
+}
+
+.app-navigation .app-navigation__menu a {
+    color: #35493c;
+}
+
+.app-navigation__menu a:hover,
+.app-navigation__menu a[aria-current="page"] {
+    background: #eef2ed;
+    color: #214f38;
+}
+
+.app-navigation__menu-icon {
+    display: grid;
+    place-items: center;
+}
+
+.app-navigation__menu-icon .icon {
+    width: 18px;
+    height: 18px;
+}
+
 .app-navigation a:focus-visible,
+.app-navigation summary:focus-visible,
 .app-navigation button:focus-visible,
 .app-skip-link:focus-visible {
     outline: 3px solid #ffd166;
@@ -108,18 +198,16 @@
 /* Placa derecha con el nombre*/
 .app-navigation__account {
     display: flex;
-    align-self: end;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    width: 100%;
+    gap: 8px;
+    flex: 0 0 auto;
     min-width: 0;
-    padding: 4px 14px 4px 16px;
-    transform: translateY(-2px);
-    color: #1C1C1C;
-    font-family: "Trebuchet MS", Georgia, serif;
-    font-size: 1rem;
-    font-weight: 800;
+    padding: 4px 0 4px 10px;
+    border-left: 1px solid rgb(255 255 255 / 22%);
+    color: #fffaf0;
+    font-size: 0.84rem;
+    font-weight: 600;
 }
 
 .app-navigation__username {
@@ -128,7 +216,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 0 rgba(255, 248, 210, 0.75);
 }
 
 .app-navigation__account form {
@@ -138,20 +225,20 @@
 
 /* Botón de cerrar sesión */
 .app-navigation__account button {
-    min-height: 34px;
-    padding: 6px 14px;
-    border: 2px solid #4a120d;
-    border-radius: 5px;
-    background: linear-gradient(180deg, #a83328 0%, #6e1a12 100%);
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid #a84237;
+    border-radius: 8px;
+    background: #a84237;
     color: #ffffff;
-    font-family: "Trebuchet MS", Georgia, serif;
-    font-size: 1.22rem;
+    font-size: 0.8rem;
     font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 215, 200, 0.4),
-        0 2px 4px rgba(0, 0, 0, 0.45);
     transition: filter 0.15s ease, transform 0.1s ease;
 }
 
@@ -164,54 +251,71 @@
 }
 
 @media (max-width: 1100px) {
-    .app-navigation {
-        grid-template-columns: minmax(0, 1fr) 235px;
-    }
-
     .app-navigation__account {
-        padding: 4px 10px;
         gap: 6px;
-        font-size: 0.88rem;
     }
 
-    .app-navigation__account button {
-        padding: 5px 10px;
-        font-size: 0.82rem;
+    .app-navigation__username {
+        display: none;
     }
 }
 
 @media (max-width: 700px) {
     .app-navigation {
-        grid-template-columns: minmax(0, 1fr) 140px;
-        min-height: 130px;
-        padding: 20px 3%;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 10px;
+        padding: 6px 8px;
+        border-radius: 0 0 12px 12px;
     }
 
-    .app-navigation__links a {
-        flex: 0 0 72px;
-        min-width: 72px;
-        font-size: 0.76rem;
+    .app-navigation__links {
+        overflow-x: auto;
+    }
+
+    .app-navigation__links > a,
+    .app-navigation__management > summary {
+        flex: 0 0 auto;
+        min-width: 54px;
+        padding: 5px 6px;
+        font-size: 0.68rem;
     }
 
     .app-navigation__icon {
-        height: 28px;
-        font-size: 1.35rem;
+        height: 20px;
+    }
+
+    .app-navigation__icon .icon {
+        width: 19px;
+        height: 19px;
     }
 
     .app-navigation__account {
-        flex-direction: column;
-        align-self: center;
-        justify-content: center;
-        gap: 4px;
-        padding: 4px 6px;
-        transform: none;
-        font-size: 2rem;
-        text-align: center;
+        flex: 0 0 auto;
+        padding: 0 0 0 5px;
+        border-left: 0;
     }
 
     .app-navigation__account button {
-        min-height: 28px;
-        padding: 4px 8px;
-        font-size: 0.74rem;
+        width: 36px;
+        min-height: 36px;
+        padding: 7px;
+    }
+
+    .app-navigation__account button span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        clip-path: inset(50%);
+    }
+
+    .app-navigation__menu {
+        position: fixed;
+        top: 62px;
+        right: 8px;
     }
 }

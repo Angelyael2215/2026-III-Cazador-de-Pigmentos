@@ -31,7 +31,7 @@ class AdventureInterfaceTests(TestCase):
         self.assertContains(registration, "Comienza tu aventura")
         self.assertContains(registration, 'name="username"')
 
-    def test_welcome_and_horizontal_map_share_the_responsive_design(self):
+    def test_welcome_and_vertical_map_share_the_responsive_design(self):
         call_command("seed_game_levels")
         self.client.force_login(self.player)
         welcome = self.client.get(reverse("bienvenida_jugador"))
@@ -42,10 +42,12 @@ class AdventureInterfaceTests(TestCase):
         self.assertContains(welcome, "Mis niveles")
 
         self.assertEqual(map_page.status_code, 200)
-        self.assertContains(map_page, "La ruta del pigmento")
-        self.assertContains(map_page, "25 niveles")
+        self.assertContains(map_page, "Tu ruta de color")
+        self.assertContains(map_page, "Ruta de 25 niveles")
         self.assertContains(map_page, "treasure-route__trail--desktop")
         self.assertContains(map_page, "treasure-route__trail--mobile")
+        self.assertContains(map_page, "treasure-node--current")
+        self.assertContains(map_page, "C610 920")
         self.assertEqual(map_page.content.count(b'class="treasure-node '), 25)
         self.assertContains(map_page, reverse("jugar_nivel", args=[1]))
 
@@ -84,3 +86,15 @@ class AdventureInterfaceTests(TestCase):
         self.assertIn("@media (prefers-reduced-motion: reduce)", stylesheet)
         self.assertIn(".treasure-route__trail--mobile", stylesheet)
         self.assertIn(":focus-visible", stylesheet)
+
+    def test_shared_interface_styles_do_not_depend_on_raster_images(self):
+        static_dir = Path(__file__).parent / "static" / "usuarios"
+        for filename in (
+            "adventure.css",
+            "admin_dashboard.css",
+            "app_navigation.css",
+            "global_background.css",
+        ):
+            with self.subTest(stylesheet=filename):
+                stylesheet = (static_dir / filename).read_text()
+                self.assertNotIn("url(", stylesheet)

@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Max
 from django.shortcuts import get_object_or_404, redirect, render
 
 from usuarios.permissions import app_permission_required, user_has_permission
@@ -23,7 +24,11 @@ def level_list(request):
 
 @app_permission_required("niveles.add_level")
 def level_create(request):
-    form = LevelForm(request.POST or None)
+    next_number = (Level.objects.aggregate(max_number=Max("number"))["max_number"] or 0) + 1
+    form = LevelForm(
+        request.POST or None,
+        initial={"number": next_number, "active": True},
+    )
     if request.method == "POST" and form.is_valid():
         level = form.save()
         messages.success(request, f"Se creó el nivel {level.number}: {level.title}.")

@@ -5,11 +5,11 @@
 <div class="game-fullscreen">
     <!-- Barra Superior -->
     <div class="game-top-bar">
-        <a href="{% url 'mapa_niveles' %}" class="back-arrow">←</a>
+        <a href="{% url 'mapa_niveles' %}" class="back-arrow" aria-label="Volver al mapa"><svg class="icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg></a>
         <span class="level-indicator">Mezclas - Nivel {{ numero_nivel }}</span>
         <div class="game-stats-header">
-            <span>❤️ 5</span>
-            <span>💎 810</span>
+            <span><svg class="icon" aria-hidden="true"><use href="#icon-heart"></use></svg> 5</span>
+            <span><svg class="icon" aria-hidden="true"><use href="#icon-gem"></use></svg> 810</span>
         </div>
     </div>
 
@@ -26,12 +26,12 @@
         <div class="mixing-panel">
             <div class="fusion-area">
                 <div class="flask-drop-slot">
-                    <div class="flask-circle">⚗️</div>
+                    <div class="flask-circle"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></div>
                     <span>Matraz Fusión 1</span>
                 </div>
                 <div class="fusion-plus">+</div>
                 <div class="flask-drop-slot">
-                    <div class="flask-circle">⚗️</div>
+                    <div class="flask-circle"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></div>
                     <span>Matraz Fusión 2</span>
                 </div>
             </div>
@@ -41,22 +41,22 @@
             <!-- Opciones de Pigmentos -->
             <div class="pigments-grid">
                 <div class="pigment-card">
-                    <div class="pigment-icon" style="color: #3498db;">🧪</div>
+                    <div class="pigment-icon" style="color: #3498db;"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></div>
                     <p>Azul Cobalto</p>
                     <small>#1E88E5</small>
                 </div>
                 <div class="pigment-card">
-                    <div class="pigment-icon" style="color: #e74c3c;">🧪</div>
+                    <div class="pigment-icon" style="color: #e74c3c;"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></div>
                     <p>Rojo Cadmio</p>
                     <small>#E53935</small>
                 </div>
                 <div class="pigment-card">
-                    <div class="pigment-icon" style="color: #ffffff;">🧪</div>
+                    <div class="pigment-icon" style="color: #ffffff;"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></div>
                     <p>Blanco Titanio</p>
                     <small>#FFFFFF</small>
                 </div>
                 <div class="pigment-card">
-                    <div class="pigment-icon" style="color: #2ecc71;">🧪</div>
+                    <div class="pigment-icon" style="color: #2ecc71;"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></div>
                     <p>Verde Viridián</p>
                     <small>#43A047</small>
                 </div>

@@ -5,11 +5,11 @@
 <div class="game-fullscreen">
     <!-- Barra Superior -->
     <div class="game-top-bar">
-        <a href="{% url 'mapa_niveles' %}" class="back-arrow">←</a>
+        <a href="{% url 'mapa_niveles' %}" class="back-arrow" aria-label="Volver al mapa"><svg class="icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg></a>
         <span class="level-indicator">Adivina el HEX - Nivel {{ numero_nivel }}</span>
         <div class="game-stats-header">
-            <span>❤️ 5</span>
-            <span>💎 810</span>
+            <span><svg class="icon" aria-hidden="true"><use href="#icon-heart"></use></svg> 5</span>
+            <span><svg class="icon" aria-hidden="true"><use href="#icon-gem"></use></svg> 810</span>
         </div>
     </div>
 
@@ -33,19 +33,19 @@
 
             <div class="pigments-options-grid">
                 <div class="pigment-btn-card" style="background-color: #e74c3c;">
-                    <span class="flask-icon-symbol">⚗️</span>
+                    <span class="flask-icon-symbol"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></span>
                 </div>
                 <div class="pigment-btn-card" style="background-color: #95a5a6;">
-                    <span class="flask-icon-symbol">⚗️</span>
+                    <span class="flask-icon-symbol"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></span>
                 </div>
                 <div class="pigment-btn-card" style="background-color: #a0522d;">
-                    <span class="flask-icon-symbol">⚗️</span>
+                    <span class="flask-icon-symbol"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></span>
                 </div>
             </div>
 
             <div class="single-option-bottom">
                 <div class="pigment-btn-card" style="background-color: #00cec9;">
-                    <span class="flask-icon-symbol">⚗️</span>
+                    <span class="flask-icon-symbol"><svg class="icon" aria-hidden="true"><use href="#icon-chemistry"></use></svg></span>
                 </div>
             </div>
         </div>

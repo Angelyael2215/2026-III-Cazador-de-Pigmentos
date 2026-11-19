@@ -5,11 +5,11 @@
 <div class="game-fullscreen">
     <!-- Barra Superior -->
     <div class="game-top-bar">
-        <a href="{% url 'mapa_niveles' %}" class="back-arrow">←</a>
+        <a href="{% url 'mapa_niveles' %}" class="back-arrow" aria-label="Volver al mapa"><svg class="icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg></a>
         <span class="level-indicator">Contraste - Nivel {{ numero_nivel }}</span>
         <div class="game-stats-header">
-            <span>❤️ 5</span>
-            <span>💎 810</span>
+            <span><svg class="icon" aria-hidden="true"><use href="#icon-heart"></use></svg> 5</span>
+            <span><svg class="icon" aria-hidden="true"><use href="#icon-gem"></use></svg> 810</span>
         </div>
     </div>
 

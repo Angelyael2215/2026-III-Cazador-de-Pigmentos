@@ -64,6 +64,7 @@ MANAGEMENT_SECTIONS = (
     },
     {
         "label": "Niveles del juego",
+        "description": "Crea y organiza retos de color para tus grupos.",
         "view_permission": "niveles.view_level",
         "list_url": "niveles_juego_lista",
         "add_permission": "niveles.add_level",
@@ -90,6 +91,7 @@ MANAGEMENT_SECTIONS = (
     },
     {
         "label": "Progresos",
+        "description": "Consulta qué niveles han completado los jugadores.",
         "view_permission": "niveles.view_progreso",
         "list_url": "progreso_lista",
         "add_permission": "niveles.add_progreso",

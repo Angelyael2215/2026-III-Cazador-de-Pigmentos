@@ -10,24 +10,25 @@
     <link rel="stylesheet" href="{% static 'usuarios/css/neobrutalim.css' %}">
     <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}">
     <link rel="stylesheet" href="{% static 'usuarios/global_background.css' %}">
-    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=4">
     
     {% block extra_css %}{% endblock %}
 </head>
-<body class="global-background">
+<body class="global-background {% block body_class %}app-page{% endblock %}">
+    {% include "usuarios/partials/icons.html" %}
     {% include "usuarios/partials/app_navigation.html" %}
-    <!-- Barra de navegación general (opcional) -->
     <header class="site-banner">
-        <h2>🎨 Cazadores de Pigmentos</h2>
+        <h2>
+            <svg class="icon" aria-hidden="true"><use href="#icon-sparkle"></use></svg>
+            Cazadores de Pigmentos
+        </h2>
     </header>
 
-    <!-- Contenido dinámico que cambiará según la página -->
     <main id="main-content">
         {% block content %}
         {% endblock %}
     </main>
 
-    <!-- Pie de página general (opcional) -->
     <footer class="site-footer">
         <p>&copy; 2026 - UTVAM </p>
     </footer>

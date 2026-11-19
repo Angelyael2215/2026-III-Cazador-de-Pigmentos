@@ -7,51 +7,65 @@
     <meta name="theme-color" content="#173b3b">
     <title>Nivel {{ level.number }} · Cazadores de Pigmentos</title>
     <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}">
-    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=4">
     <link rel="stylesheet" href="{% static 'usuarios/global_background.css' %}">
 </head>
 <body class="adventure-game-page global-background">
+{% include "usuarios/partials/icons.html" %}
 {% include "usuarios/partials/app_navigation.html" %}
 <main class="game-fullscreen" id="main-content" tabindex="-1">
     <header class="game-top-bar">
-        <a href="{% url 'mapa_niveles' %}" class="back-arrow" aria-label="Volver al mapa">←</a>
-        <span class="level-indicator">Expedición {{ level.number }} · {{ level.get_kind_display }}</span>
+        <a href="{% url 'mapa_niveles' %}" class="back-arrow" aria-label="Volver al mapa">
+            <svg class="icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg>
+        </a>
+        <span class="level-indicator">Nivel {{ level.number }}</span>
         <div class="game-stats-header" aria-label="Progreso del nivel">
+            <span>Nivel {{ level.number }} de {{ total_levels }}</span>
             {% if progress %}
-                <span>Intentos {{ progress.attempts }}</span>
-                {% if progress.completed %}<span>✓ Completado</span>{% endif %}
-            {% else %}
-                <span>Primera expedición</span>
+                {% if progress.completed %}
+                    <span><svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg> Completado</span>
+                {% endif %}
             {% endif %}
         </div>
     </header>
 
     <div class="game-main-container">
         <section class="objective-card" aria-labelledby="level-title">
-            <span class="label-obj">PRUEBA DE PIGMENTOS</span>
+            <span class="label-obj">Reto de color</span>
             <h1 id="level-title">{{ level.title }}</h1>
             <p>{{ level.instruction }}</p>
-            {% if brand_name %}<p class="level-brand">Marca por descubrir: <strong>{{ brand_name }}</strong></p>{% endif %}
+            {% if brand_name %}<p class="level-brand">Busca los colores para: <strong>{{ brand_name }}</strong></p>{% endif %}
 
-            {% if visual_data.reference_color %}
-                <div class="level-target">
-                    <span class="swatch" style="background-color: {{ visual_data.reference_color }}" aria-hidden="true"></span>
-                    <span>Color objetivo <strong>{{ visual_data.reference_color }}</strong></span>
-                </div>
-            {% elif visual_data.target_hex %}
-                <div class="level-target">
-                    <span class="swatch" style="background-color: {{ visual_data.target_hex }}" aria-hidden="true"></span>
-                    <span>Código del mapa <strong>{{ visual_data.target_hex }}</strong></span>
-                </div>
-            {% elif visual_data.target_color %}
-                <div class="level-target">
-                    <span class="swatch" style="background-color: {{ visual_data.target_color }}" aria-hidden="true"></span>
-                    <span>Pigmento de referencia <strong>{{ visual_data.target_color }}</strong></span>
-                </div>
-            {% elif visual_data.target_background %}
-                <div class="level-target level-target--wide">
-                    <span class="swatch" style="background-color: {{ visual_data.target_background }}" aria-hidden="true"></span>
-                    <span>Fondo de prueba <strong>{{ visual_data.target_background }}</strong></span>
+            {% if level.kind != "rgb" %}
+                {% if visual_data.target_hex %}
+                    <div class="level-target">
+                        <span class="swatch" style="background-color: {{ visual_data.target_hex }}" aria-hidden="true"></span>
+                        <span>Encuentra el mismo color</span>
+                    </div>
+                {% elif visual_data.reference_color %}
+                    <div class="level-target">
+                        <span class="swatch" style="background-color: {{ visual_data.reference_color }}" aria-hidden="true"></span>
+                        <span>Color de referencia</span>
+                    </div>
+                {% elif visual_data.target_color %}
+                    <div class="level-target">
+                        <span class="swatch" style="background-color: {{ visual_data.target_color }}" aria-hidden="true"></span>
+                        <span>Color de referencia</span>
+                    </div>
+                {% elif visual_data.target_background %}
+                    <div class="level-target level-target--wide">
+                        <span class="swatch" style="background-color: {{ visual_data.target_background }}" aria-hidden="true"></span>
+                        <span>Fondo de referencia</span>
+                    </div>
+                {% endif %}
+            {% endif %}
+            {% if level.kind == "gradient" and colors %}
+                <div class="level-route-colors" aria-label="Colores del camino">
+                    <span class="level-route-colors__label">Inicio</span>
+                    {% for color in colors %}
+                        <span class="swatch" style="background-color: {{ color }}" aria-label="Muestra {{ forloop.counter }}"></span>
+                    {% endfor %}
+                    <span class="level-route-colors__label">Final</span>
                 </div>
             {% endif %}
         </section>
@@ -62,7 +76,9 @@
 
         {% if discovered_result %}
             <section class="mix-discovery" aria-label="Pigmento descubierto">
-                <span class="mix-discovery__seal" aria-hidden="true">✦</span>
+                <span class="mix-discovery__seal" aria-hidden="true">
+                    <svg class="icon"><use href="#icon-sparkle"></use></svg>
+                </span>
                 <div>
                     <p>¡Nuevo tono descubierto!</p>
                     <h2>{{ discovered_result.name }}</h2>
@@ -77,18 +93,50 @@
 
             {% if level.kind == "rgb" %}
                 <fieldset class="challenge-fieldset">
-                    <legend>Ajusta los canales de luz</legend>
-                    <p class="challenge-hint">Escribe un valor entre 0 y 255 para cada canal. Acércate todo lo posible al color objetivo.</p>
-                    <div class="rgb-fields">
-                        <label>Rojo <input type="number" min="0" max="255" value="0" inputmode="numeric" data-rgb></label>
-                        <label>Verde <input type="number" min="0" max="255" value="0" inputmode="numeric" data-rgb></label>
-                        <label>Azul <input type="number" min="0" max="255" value="0" inputmode="numeric" data-rgb></label>
+                    <legend>Iguala el color</legend>
+                    <p class="challenge-hint">Mueve las barras hasta que tu color se vea como el modelo.</p>
+                    <div class="rgb-lab" data-rgb-lab>
+                        <div class="rgb-comparison">
+                            <div class="rgb-preview">
+                                <span>Modelo</span>
+                                <span
+                                    class="rgb-preview__color"
+                                    style="background-color: {{ visual_data.reference_color }}"
+                                    role="img"
+                                    aria-label="Color modelo"
+                                ></span>
+                            </div>
+                            <div class="rgb-preview">
+                                <span>Tu color</span>
+                                <span
+                                    class="rgb-preview__color"
+                                    data-rgb-preview
+                                    style="background-color: rgb(128 128 128)"
+                                    role="img"
+                                    aria-label="Tu color actual"
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="rgb-sliders">
+                            <label class="rgb-slider rgb-slider--red">
+                                <span>Rojo</span>
+                                <input type="range" min="0" max="255" value="128" data-rgb-channel="0" aria-label="Rojo">
+                            </label>
+                            <label class="rgb-slider rgb-slider--green">
+                                <span>Verde</span>
+                                <input type="range" min="0" max="255" value="128" data-rgb-channel="1" aria-label="Verde">
+                            </label>
+                            <label class="rgb-slider rgb-slider--blue">
+                                <span>Azul</span>
+                                <input type="range" min="0" max="255" value="128" data-rgb-channel="2" aria-label="Azul">
+                            </label>
+                        </div>
                     </div>
                 </fieldset>
             {% elif level.kind == "mix" %}
                 <fieldset class="challenge-fieldset">
-                    <legend>Prepara tu mezcla</legend>
-                    <p class="challenge-hint">Arrastra los pigmentos al cuenco o tócalos para agregarlos. Puedes usar teclado o pantalla táctil.</p>
+                    <legend>Toca los colores para mezclarlos</legend>
+                    <p class="challenge-hint">Toca un color para agregarlo. Tócalo otra vez para quitarlo.</p>
                     <div class="pigment-mixer" data-mix-lab>
                         <div class="pigment-mixer__palette" aria-label="Pigmentos disponibles">
                             {% for pigment in mix_options %}
@@ -105,7 +153,6 @@
                                     <span class="swatch" style="background-color: {{ pigment.color }}" aria-hidden="true"></span>
                                     <span class="pigment-chip__copy">
                                         <strong>{{ pigment.label }}</strong>
-                                        <small>{{ pigment.color }}</small>
                                     </span>
                                     <span class="pigment-chip__add" aria-hidden="true">+</span>
                                 </button>
@@ -119,7 +166,9 @@
                                 <span>Tu selección</span>
                             </div>
                             <div class="pigment-dropzone" data-mix-dropzone tabindex="0" role="group" aria-label="Zona para agregar pigmentos">
-                                <div class="pigment-bowl" aria-hidden="true">◉</div>
+                                <div class="pigment-bowl" aria-hidden="true">
+                                    <svg class="icon"><use href="#icon-chemistry"></use></svg>
+                                </div>
                                 <div class="pigment-selection">
                                     <p class="pigment-selection__empty" data-mix-empty>Aún no agregas pigmentos</p>
                                     <div class="pigment-selection__items" data-mix-selected aria-live="polite"></div>
@@ -131,14 +180,14 @@
                 </fieldset>
             {% elif level.kind == "temperature" %}
                 <fieldset class="challenge-fieldset">
-                    <legend>Clasifica los pigmentos</legend>
+                    <legend>¿Fuego o hielo?</legend>
                     <div class="temperature-list">
                         {% for color in colors %}
                             <div class="temperature-choice" data-temperature-color="{{ color }}">
                                 <span class="swatch" style="background-color: {{ color }}" aria-hidden="true"></span>
-                                <strong>{{ color }}</strong>
-                                <label><input type="radio" name="temperature-{{ forloop.counter }}" value="warm"> Cálido</label>
-                                <label><input type="radio" name="temperature-{{ forloop.counter }}" value="cold"> Frío</label>
+                                <strong>Muestra {{ forloop.counter }}</strong>
+                                <label><input type="radio" name="temperature-{{ forloop.counter }}" value="warm"><svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg> Fuego</label>
+                                <label><input type="radio" name="temperature-{{ forloop.counter }}" value="cold"><svg class="icon" aria-hidden="true"><use href="#icon-snow"></use></svg> Hielo</label>
                             </div>
                         {% empty %}
                             <p>Este reto aún no tiene pigmentos configurados.</p>
@@ -147,12 +196,12 @@
                 </fieldset>
             {% elif level.kind == "saturation" %}
                 <fieldset class="challenge-fieldset">
-                    <legend>Ordena de menor a mayor saturación</legend>
-                    <p class="challenge-hint">Mueve las muestras con las flechas; también puedes usar el teclado para enfocarlas.</p>
+                    <legend>Ordena del más suave al más fuerte</legend>
+                    <p class="challenge-hint">Usa las flechas para cambiar el orden.</p>
                     <ol class="order-list" id="color-order">
                         {% for color in colors %}
                             <li data-order-color="{{ color }}">
-                                <span class="order-color"><span class="swatch" style="background-color: {{ color }}" aria-hidden="true"></span><strong>{{ color }}</strong></span>
+                                <span class="order-color"><span class="swatch" style="background-color: {{ color }}" aria-hidden="true"></span><strong>Muestra {{ forloop.counter }}</strong></span>
                                 <span class="order-controls">
                                     <button type="button" data-move="up" aria-label="Mover {{ color }} arriba">↑</button>
                                     <button type="button" data-move="down" aria-label="Mover {{ color }} abajo">↓</button>
@@ -169,13 +218,13 @@
                     <div class="challenge-options">
                         {% for option in options %}
                             <label class="challenge-option">
-                                <input type="radio" name="option" value="{{ option.id }}" required>
+                                <input type="radio" name="option" value="{{ option.id }}">
                                 <span class="challenge-option__body">
                                     <strong>{{ option.label }}</strong>
                                     {% if option.colors %}
                                         <span class="palette-colors">
                                             {% for color in option.colors %}
-                                                <span class="swatch" style="background-color: {{ color }}" title="{{ color }}" aria-label="{{ color }}"></span>
+                                                <span class="swatch" style="background-color: {{ color }}" aria-label="Color {{ forloop.counter }}"></span>
                                             {% endfor %}
                                         </span>
                                     {% endif %}
@@ -188,8 +237,9 @@
                 </fieldset>
             {% endif %}
 
+            <p class="challenge-feedback" data-answer-error role="status" hidden></p>
             {% if level.kind == "rgb" or level.kind == "mix" or level.kind == "temperature" or level.kind == "saturation" or options %}
-                <button type="submit" class="btn-comprobar">Comprobar respuesta</button>
+                <button type="submit" class="btn-comprobar">Comprobar</button>
             {% else %}
                 <button type="submit" class="btn-comprobar" disabled>Reto en preparación</button>
             {% endif %}
@@ -200,10 +250,12 @@
     document.getElementById("answer-form").addEventListener("submit", function (event) {
         const answer = {};
         const kind = "{{ level.kind }}";
+        const feedback = document.querySelector("[data-answer-error]");
+        feedback.hidden = true;
 
         if (kind === "rgb") {
             answer.rgb = Array.from(
-                document.querySelectorAll("[data-rgb]"),
+                document.querySelectorAll("[data-rgb-channel]"),
                 (input) => Number(input.value)
             );
         } else if (kind === "mix") {
@@ -213,8 +265,8 @@
             );
             if (!answer.colors.length) {
                 event.preventDefault();
-                const status = document.querySelector("[data-mix-status]");
-                status.textContent = "Agrega al menos un pigmento antes de comprobar.";
+                feedback.textContent = "Toca al menos un color para continuar.";
+                feedback.hidden = false;
                 return;
             }
         } else if (kind === "temperature") {
@@ -224,7 +276,8 @@
                 const selected = item.querySelector("input:checked");
                 if (!selected) {
                     event.preventDefault();
-                    alert("Clasifica todos los pigmentos antes de comprobar.");
+                    feedback.textContent = "Elige fuego o hielo para cada muestra.";
+                    feedback.hidden = false;
                     return;
                 }
                 answer[selected.value].push(item.dataset.temperatureColor);
@@ -238,7 +291,8 @@
             const selected = document.querySelector('input[name="option"]:checked');
             if (!selected) {
                 event.preventDefault();
-                alert("Selecciona una respuesta antes de comprobar.");
+                feedback.textContent = "Toca una opción para continuar.";
+                feedback.hidden = false;
                 return;
             }
             answer.option_id = selected.value;
@@ -246,6 +300,19 @@
 
         document.getElementById("answer").value = JSON.stringify(answer);
     });
+
+    const rgbLab = document.querySelector("[data-rgb-lab]");
+    if (rgbLab) {
+        const sliders = Array.from(rgbLab.querySelectorAll("[data-rgb-channel]"));
+        const preview = rgbLab.querySelector("[data-rgb-preview]");
+
+        function updateRgbPreview() {
+            const channels = sliders.map((slider) => Number(slider.value));
+            preview.style.backgroundColor = `rgb(${channels.join(", ")})`;
+        }
+
+        sliders.forEach((slider) => slider.addEventListener("input", updateRgbPreview));
+    }
 
     const mixLab = document.querySelector("[data-mix-lab]");
     if (mixLab) {
