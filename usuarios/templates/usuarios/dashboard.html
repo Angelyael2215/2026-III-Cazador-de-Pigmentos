@@ -1,19 +1,27 @@
 {% extends 'usuarios/base_admin.html' %}
 
 {% block title %}Panel de administración | Cazadores de Pigmentos{% endblock %}
-{% block body_class %}admin-panel-body{% endblock %}
+{% block body_class %}admin-panel-body{% if is_teacher %} teacher-panel-body{% endif %}{% endblock %}
 
 {% block content %}
 <section class="admin-dashboard" aria-labelledby="dashboard-title">
     <header class="dashboard-heading">
-        <span class="dashboard-heading__icon" aria-hidden="true">⚒️</span>
+        <span class="dashboard-heading__icon" aria-hidden="true">
+            <svg class="icon"><use href="#icon-shield"></use></svg>
+        </span>
         <div>
             <p class="dashboard-eyebrow">Cazadores de Pigmentos</p>
             <h1 id="dashboard-title">
-                {% if is_administrator %}Panel de administración{% else %}Vistas disponibles{% endif %}
+                {% if is_administrator %}Panel de administración{% elif is_teacher %}Panel para profesores{% else %}Vistas disponibles{% endif %}
             </h1>
             <p class="dashboard-intro">
-                Bienvenido{% if is_administrator %} al panel de administración{% else %}. Estas son las secciones habilitadas para tu usuario{% endif %}.
+                {% if is_administrator %}
+                    Administra las cuentas, los permisos y el contenido del juego.
+                {% elif is_teacher %}
+                    Crea retos de color y consulta el avance de tus grupos.
+                {% else %}
+                    Estas son las secciones habilitadas para tu usuario.
+                {% endif %}
             </p>
         </div>
     </header>
@@ -21,28 +29,28 @@
     <div class="dashboard-cards">
         {% if is_administrator %}
             <article class="dashboard-card dashboard-card--permissions">
-                <h2><span aria-hidden="true">🗝️</span> Permisos</h2>
+                <h2><svg class="icon" aria-hidden="true"><use href="#icon-key"></use></svg> Permisos</h2>
                 <p class="dashboard-card__count">{{ total_permisos }}</p>
                 <p class="dashboard-card__description">Acciones registradas en el juego</p>
                 <a href="{% url 'gestion_permisos' %}" class="dashboard-card__action">Gestionar permisos</a>
             </article>
 
             <article class="dashboard-card dashboard-card--roles">
-                <h2><span aria-hidden="true">🎭</span> Roles</h2>
+                <h2><svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg> Roles</h2>
                 <p class="dashboard-card__count">{{ total_roles }}</p>
                 <p class="dashboard-card__description">Grupos de acceso definidos</p>
                 <a href="{% url 'gestion_roles' %}" class="dashboard-card__action">Gestionar roles</a>
             </article>
 
             <article class="dashboard-card dashboard-card--users">
-                <h2><span aria-hidden="true">🧑‍🤝‍🧑</span> Usuarios</h2>
+                <h2><svg class="icon" aria-hidden="true"><use href="#icon-users"></use></svg> Usuarios</h2>
                 <p class="dashboard-card__count">{{ total_usuarios }}</p>
                 <p class="dashboard-card__description">Cuentas registradas en el juego</p>
                 <a href="{% url 'gestion_usuarios_roles' %}" class="dashboard-card__action">Gestionar usuarios</a>
             </article>
 
             <article class="dashboard-card dashboard-card--levels">
-                <h2><span aria-hidden="true">🗺️</span> Niveles del juego</h2>
+                <h2><svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg> Niveles del juego</h2>
                 <p class="dashboard-card__count">{{ total_niveles }}</p>
                 <p class="dashboard-card__description">Retos configurados para los jugadores</p>
                 <a href="{% url 'niveles_juego_lista' %}" class="dashboard-card__action">Gestionar niveles</a>
@@ -50,15 +58,19 @@
         {% endif %}
 
         {% for section in management_sections %}
-            <article class="dashboard-card">
-                <h2><span aria-hidden="true">🎨</span> {{ section.label }}</h2>
-                <p class="dashboard-card__description">Acceso disponible según tus permisos efectivos.</p>
+            <article class="dashboard-card{% if is_teacher %} dashboard-card--teacher{% endif %}">
+                <h2><svg class="icon" aria-hidden="true"><use href="#icon-levels"></use></svg> {{ section.label }}</h2>
+                <p class="dashboard-card__description">{{ section.description|default:"Acceso disponible según tus permisos." }}</p>
                 <div class="dashboard-card__actions">
                     {% if section.can_view %}
-                        <a href="{% url section.list_url %}" class="dashboard-card__action">Ver {{ section.label }}</a>
+                        <a href="{% url section.list_url %}" class="dashboard-card__action">
+                            {% if section.label == "Niveles del juego" %}Organizar niveles{% elif section.label == "Progresos" %}Ver progreso{% else %}Ver {{ section.label }}{% endif %}
+                        </a>
                     {% endif %}
                     {% if section.can_add %}
-                        <a href="{% url section.create_url %}" class="dashboard-card__action dashboard-card__action--secondary">Crear</a>
+                        <a href="{% url section.create_url %}" class="dashboard-card__action dashboard-card__action--secondary">
+                            {% if section.label == "Niveles del juego" %}Crear nivel{% else %}Crear{% endif %}
+                        </a>
                     {% endif %}
                 </div>
             </article>

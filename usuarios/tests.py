@@ -43,9 +43,9 @@ class ProfilePermissionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "profile-reader")
         self.assertNotContains(response, "href=\"/gestion/perfiles/nuevo/\"")
-        self.assertContains(response, ">Perfiles</a>")
-        self.assertNotContains(response, ">Roles</a>")
-        self.assertNotContains(response, ">Usuarios</a>")
+        self.assertContains(response, "<span>Perfiles</span>")
+        self.assertNotContains(response, "<span>Roles</span>")
+        self.assertNotContains(response, "<span>Usuarios</span>")
 
     def test_player_sees_game_navigation_without_administration_links(self):
         user = get_user_model().objects.create_user(
@@ -83,12 +83,45 @@ class ProfilePermissionTests(TestCase):
         response = self.client.get("/gestion/perfiles/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, ">Panel</a>")
-        self.assertContains(response, ">Juego y perfil</a>")
+        self.assertContains(response, 'class="app-navigation__label">Panel</span>')
+        self.assertContains(response, 'class="app-navigation__label">Jugar</span>')
         self.assertContains(response, 'href="/gestion/perfiles/"')
         self.assertContains(response, 'aria-current="page"')
-        self.assertContains(response, ">Usuarios</a>")
-        self.assertContains(response, ">Roles</a>")
+        self.assertContains(response, "<span>Usuarios</span>")
+        self.assertContains(response, "<span>Roles</span>")
+
+    def test_teacher_panel_shows_only_granted_classroom_tools(self):
+        teacher = get_user_model().objects.create_user(
+            username="classroom-teacher",
+            password="test-password",
+        )
+        role = Group.objects.create(name="classroom-teacher")
+        role.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="niveles",
+                codename="view_level",
+            ),
+            Permission.objects.get(
+                content_type__app_label="niveles",
+                codename="add_level",
+            ),
+            Permission.objects.get(
+                content_type__app_label="niveles",
+                codename="view_progreso",
+            ),
+        )
+        teacher.groups.add(role)
+        self.client.force_login(teacher)
+
+        response = self.client.get("/gestion/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Panel para profesores")
+        self.assertContains(response, "teacher-panel-body")
+        self.assertContains(response, "Crear nivel")
+        self.assertContains(response, "Ver progreso")
+        self.assertNotContains(response, 'href="/gestion/permisos/"')
+        self.assertNotContains(response, 'href="/gestion/roles/"')
 
     def test_authenticated_user_without_permission_is_denied_direct_list_url(self):
         user = get_user_model().objects.create_user(
@@ -112,7 +145,7 @@ class ProfilePermissionTests(TestCase):
 
         self.assertContains(response, 'href="#main-content"')
         self.assertContains(response, "Saltar al contenido principal")
-        self.assertContains(response, 'href="/static/usuarios/app_navigation.css"')
+        self.assertContains(response, '/static/usuarios/app_navigation.css')
         stylesheet = (
             Path(__file__).parent / "static" / "usuarios" / "app_navigation.css"
         ).read_text()
@@ -320,8 +353,8 @@ class ProfilePermissionTests(TestCase):
         self.assertContains(response, "Editar")
         self.assertContains(response, "Eliminar")
         self.assertContains(response, "Ver perfil de usuario")
-        self.assertContains(response, "Aplicación: Usuarios")
-        self.assertContains(response, "Modelo: perfil de usuario")
+        self.assertContains(response, "Descripción funcional")
+        self.assertContains(response, "Código técnico")
         self.assertContains(response, "usuarios.view_perfilusuario")
 
     def test_permission_catalog_searches_label_codename_and_application(self):

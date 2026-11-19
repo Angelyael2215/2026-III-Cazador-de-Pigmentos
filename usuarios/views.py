@@ -98,6 +98,7 @@ def bienvenida_jugador(request):
 @login_required
 def mapa_niveles(request):
     player, _ = Player.objects.get_or_create(user=request.user)
+    perfil, _ = PerfilUsuario.objects.get_or_create(usuario=request.user)
     progress_by_level = {
         item.level_id: item
         for item in LevelProgress.objects.filter(player=player)
@@ -114,7 +115,11 @@ def mapa_niveles(request):
         }
         for level in Level.objects.filter(active=True, number__lte=25).order_by("number")
     ]
-    return render(request, "usuarios/mapa.html", {"levels": levels})
+    return render(
+        request,
+        "usuarios/mapa.html",
+        {"levels": levels, "perfil": perfil, "player": player},
+    )
 
 def is_admin(user):
     return es_administrador(user)
@@ -144,10 +149,16 @@ def ajustes_jugador(request):
 @user_passes_test(has_management_access, login_url='login')
 def dashboard_admin(request):
     is_administrator = es_administrador(request.user)
+    management_sections = get_management_sections(request.user)
+    is_teacher = not is_administrator and any(
+        section["label"] in {"Niveles del juego", "Progresos"}
+        for section in management_sections
+    )
     context = {
         'is_administrator': is_administrator,
+        'is_teacher': is_teacher,
         'management_sections': (
-            [] if is_administrator else get_management_sections(request.user)
+            [] if is_administrator else management_sections
         ),
     }
     if is_administrator:

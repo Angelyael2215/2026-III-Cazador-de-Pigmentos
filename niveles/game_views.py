@@ -13,6 +13,26 @@ from .models import Level, LevelProgress, Player
 from .services import submit_level_answer
 
 
+CHILD_COLOR_NAMES = {
+    "#1565C0": "Azul",
+    "#1E88E5": "Azul",
+    "#3949AB": "Azul",
+    "#3F51B5": "Azul",
+    "#E53935": "Rojo",
+    "#F44336": "Rojo",
+    "#D81B60": "Rosa",
+    "#FDD835": "Amarillo",
+    "#FFEB3B": "Amarillo",
+    "#FFFFFF": "Blanco",
+    "#9E9E9E": "Gris",
+    "#43A047": "Verde",
+}
+
+
+def simple_color_name(color):
+    return CHILD_COLOR_NAMES.get(color.upper(), "Color")
+
+
 def level_colors(level):
     data = level.data
     if not isinstance(data, dict):
@@ -38,7 +58,7 @@ def level_mix_options(level):
     color_list = data.get("colors")
     if isinstance(color_list, list):
         return [
-            {"id": color, "label": color, "color": color}
+            {"id": color, "label": simple_color_name(color), "color": color}
             for color in color_list
             if isinstance(color, str)
             and re.fullmatch(r"#[0-9a-fA-F]{6}", color)
@@ -51,7 +71,11 @@ def level_mix_options(level):
     return [
         {
             "id": option["id"],
-            "label": option.get("name") or option.get("label") or option["id"],
+            "label": (
+                option.get("name")
+                or option.get("label")
+                or simple_color_name(option["color"])
+            ),
             "color": option["color"],
         }
         for option in options
@@ -122,12 +146,28 @@ def play_level(request, number):
             messages.error(request, str(error))
         else:
             if correct:
-                if earned_xp:
-                    messages.success(request, "¡Correcto! Ganaste 10 XP y 1 gema.")
-                else:
-                    messages.success(request, "¡Correcto! Ya habías completado este nivel.")
-            else:
-                messages.warning(request, "Respuesta incorrecta. Inténtalo de nuevo.")
+                next_level = Level.objects.filter(
+                    active=True,
+                    number=number + 1,
+                ).first()
+                if next_level:
+                    message = (
+                        "¡Muy bien! Sigue con el siguiente nivel."
+                        if earned_xp
+                        else "Este nivel ya estaba completo. Sigue con el siguiente."
+                    )
+                    messages.success(request, message)
+                    return redirect("jugar_nivel", number=next_level.number)
+
+                message = (
+                    "¡Muy bien! Llegaste al final de la ruta disponible."
+                    if earned_xp
+                    else "Este nivel ya estaba completo."
+                )
+                messages.success(request, message)
+                return redirect("mapa_niveles")
+
+            messages.warning(request, "Prueba otra vez.")
             return redirect("jugar_nivel", number=number)
 
     progress = LevelProgress.objects.filter(player=player, level=level).first()
@@ -142,6 +182,7 @@ def play_level(request, number):
             "colors": level_colors(level),
             "mix_options": level_mix_options(level),
             "options": level_options(level.data),
+            "total_levels": Level.objects.filter(active=True).count(),
             "visual_data": level_visual_data(level),
             "brand_name": (
                 level.data.get("brand_name")

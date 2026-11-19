@@ -9,26 +9,32 @@
         
         <div class="stats-container">
             <div class="stat-box lives">
-                <h3>❤️ Vidas</h3>
+                <h3><svg class="icon" aria-hidden="true"><use href="#icon-heart"></use></svg> Vidas</h3>
                 <p class="stat-number">{{ perfil.vidas }}</p>
             </div>
             <div class="stat-box gems">
-                <h3>💎 Gemas</h3>
+                <h3><svg class="icon" aria-hidden="true"><use href="#icon-gem"></use></svg> Gemas</h3>
                 <p class="stat-number">{{ perfil.gemas }}</p>
             </div>
             <div class="stat-box">
-                <h3>⭐ Nivel máximo</h3>
+                <h3><svg class="icon" aria-hidden="true"><use href="#icon-star"></use></svg> Nivel máximo</h3>
                 <p class="stat-number">{{ perfil.nivel_maximo_desbloqueado }}</p>
             </div>
             <div class="stat-box">
-                <h3>✨ Experiencia</h3>
+                <h3><svg class="icon" aria-hidden="true"><use href="#icon-sparkle"></use></svg> Experiencia</h3>
                 <p class="stat-number">{{ player.xp }}</p>
             </div>
         </div>
 
         <div class="actions-container">
-            <a href="{% url 'mapa_niveles' %}" class="menu-btn btn-map">🗺️ Abrir mapa de niveles</a>
-            <a href="{% url 'ajustes_jugador' %}" class="menu-btn btn-settings">⚙️ Ajustes de accesibilidad</a>
+            <a href="{% url 'mapa_niveles' %}" class="menu-btn btn-map">
+                <svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg>
+                Abrir mapa de niveles
+            </a>
+            <a href="{% url 'ajustes_jugador' %}" class="menu-btn btn-settings">
+                <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+                Ajustes de accesibilidad
+            </a>
         </div>
     </div>
 
@@ -47,7 +53,10 @@
                                     {% if item.completed %}Volver a jugar{% else %}Jugar{% endif %}
                                 </a>
                             {% else %}
-                                <span class="level-locked">🔒 Bloqueado</span>
+                                <span class="level-locked">
+                                    <svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
+                                    Bloqueado
+                                </span>
                             {% endif %}
                         </article>
                     {% endfor %}

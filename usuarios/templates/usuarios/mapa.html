@@ -1,54 +1,128 @@
 {% extends 'usuarios/base.html' %}
 
+{% block title %}Mapa de niveles | Cazadores de Pigmentos{% endblock %}
+{% block body_class %}map-page{% endblock %}
+
 {% block content %}
-<section class="treasure-map" aria-labelledby="map-title">
-    <header class="treasure-map__header">
-        <a class="map-back" href="{% url 'bienvenida_jugador' %}">
-            <span aria-hidden="true">←</span> Mi campamento
+<main class="map-screen" aria-labelledby="map-title">
+    <header class="map-hud">
+        <a class="map-hud__profile" href="{% url 'bienvenida_jugador' %}" aria-label="Ir a mi perfil">
+            <span class="map-hud__avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+            <span class="map-hud__greeting">
+                <small>Jugador</small>
+                <strong>{{ request.user.username }}</strong>
+            </span>
         </a>
-        <div class="treasure-map__heading">
-            <span class="map-kicker">CARTA DE NAVEGACIÓN</span>
-            <h1 id="map-title">La ruta del pigmento</h1>
-            <p>{{ levels|length }} pruebas, un tesoro de colores por descubrir.</p>
+        <div class="map-hud__resources" aria-label="Recursos del jugador">
+            <span class="map-resource map-resource--life">
+                <svg class="icon" aria-hidden="true"><use href="#icon-heart"></use></svg>
+                <strong>{{ perfil.vidas }}</strong>
+                <small>Vidas</small>
+            </span>
+            <span class="map-resource map-resource--gem">
+                <svg class="icon" aria-hidden="true"><use href="#icon-gem"></use></svg>
+                <strong>{{ perfil.gemas }}</strong>
+                <small>Gemas</small>
+            </span>
+            <span class="map-resource map-resource--xp">
+                <svg class="icon" aria-hidden="true"><use href="#icon-star"></use></svg>
+                <strong>{{ player.xp }}</strong>
+                <small>XP</small>
+            </span>
         </div>
-        <div class="map-progress" aria-label="Ruta de {{ levels|length }} niveles">
-            <span aria-hidden="true">✦</span> {{ levels|length }} niveles
-        </div>
+        <a class="map-hud__settings" href="{% url 'ajustes_jugador' %}" aria-label="Ajustes">
+            <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+        </a>
     </header>
 
-    <div class="map-legend" aria-label="Información del mapa">
-        <span><i class="map-legend__dot map-legend__dot--open"></i> Nivel disponible</span>
-        <span><i class="map-legend__dot map-legend__dot--treasure"></i> Gran hallazgo</span>
-    </div>
+    <section class="map-intro">
+        <span class="map-intro__level">Nivel {{ player.current_level_reached }}</span>
+        <h1 id="map-title">Tu ruta de color</h1>
+        <p>Avanza reto a reto y descubre nuevos pigmentos.</p>
+        <div class="map-legend" aria-label="Estado de los niveles">
+            <span><i class="map-legend__dot map-legend__dot--open"></i> Disponible</span>
+            <span><i class="map-legend__dot map-legend__dot--locked"></i> Por descubrir</span>
+        </div>
+    </section>
 
-    <nav class="treasure-route" aria-label="Niveles de la ruta del pigmento">
-        <svg class="treasure-route__trail treasure-route__trail--desktop" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M100 50 H900 V150 H100 V250 H900 V350 H100 V450 H900"/>
+    {% for message in messages %}
+        <p class="map-feedback map-feedback--{{ message.tags }}" role="status">{{ message }}</p>
+    {% endfor %}
+
+    <section class="treasure-route" aria-label="Ruta de {{ levels|length }} niveles">
+        <svg class="treasure-route__trail treasure-route__trail--desktop" viewBox="0 0 1000 800" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M100 740 C300 710 700 770 900 740 C930 700 870 620 900 570 C700 540 300 600 100 570 C70 530 130 450 100 400 C300 370 700 430 900 400 C930 360 870 280 900 230 C700 200 300 260 100 230 C70 190 130 110 100 60 C300 30 700 90 900 60"/>
         </svg>
         <svg class="treasure-route__trail treasure-route__trail--mobile" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M167 56 H833 V167 H167 V278 H833 V389 H167 V500 H833 V611 H167 V722 H833 V833 H167 V944 H500"/>
+            <path d="M500 944 C610 920 720 968 833 944 C875 920 800 870 833 833 C700 800 350 866 167 833 C120 800 200 760 167 722 C350 690 650 755 833 722 C875 690 800 650 833 611 C700 580 350 644 167 611 C120 580 200 540 167 500 C350 470 650 535 833 500 C875 470 800 430 833 389 C700 360 350 424 167 389 C120 360 200 320 167 278 C350 248 650 313 833 278 C875 248 800 208 833 167 C700 138 350 202 167 167 C120 138 200 98 167 56 C280 26 390 86 500 56"/>
         </svg>
         <div class="treasure-route__nodes">
             {% for item in levels %}
                 {% if item.unlocked %}
-                    <a href="{% url 'jugar_nivel' item.level.number %}" class="treasure-node {% cycle 'treasure-node--green' 'treasure-node--blue' 'treasure-node--violet' 'treasure-node--amber' 'treasure-node--red' %}{% if forloop.last %} treasure-node--treasure{% endif %}{% if item.completed %} treasure-node--completed{% endif %}">
+                    <a href="{% url 'jugar_nivel' item.level.number %}" class="treasure-node{% if forloop.last %} treasure-node--treasure{% endif %}{% if item.level.number == 5 or item.level.number == 10 or item.level.number == 15 or item.level.number == 20 or item.level.number == 25 %} treasure-node--milestone{% endif %}{% if item.completed %} treasure-node--completed{% endif %}{% if item.level.number == player.current_level_reached %} treasure-node--current{% endif %}">
                         <span class="treasure-node__number">{{ item.level.number }}</span>
                         <span class="treasure-node__name">{{ item.level.title }}</span>
-                        {% if item.completed %}<span class="treasure-node__status" aria-label="Completado">✓</span>{% endif %}
+                        {% if item.level.number == 5 or item.level.number == 10 or item.level.number == 15 or item.level.number == 20 or item.level.number == 25 %}
+                            <span class="treasure-node__landmark" aria-hidden="true">
+                                <svg class="icon">
+                                    {% if item.level.number == 25 %}<use href="#icon-award"></use>
+                                    {% elif item.level.number == 20 %}<use href="#icon-snow"></use>
+                                    {% elif item.level.number == 15 %}<use href="#icon-gem"></use>
+                                    {% elif item.level.number == 10 %}<use href="#icon-heart"></use>
+                                    {% else %}<use href="#icon-chemistry"></use>{% endif %}
+                                </svg>
+                            </span>
+                        {% endif %}
+                        {% if item.completed %}
+                            <span class="treasure-node__status" aria-label="Completado">
+                                <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>
+                            </span>
+                        {% endif %}
                     </a>
                 {% else %}
                     <span class="treasure-node treasure-node--locked" aria-label="Nivel {{ item.level.number }} bloqueado">
                         <span class="treasure-node__number">{{ item.level.number }}</span>
                         <span class="treasure-node__name">{{ item.level.title }}</span>
-                        <span class="treasure-node__status" aria-hidden="true">🔒</span>
+                        <span class="treasure-node__status" aria-hidden="true">
+                            <svg class="icon"><use href="#icon-lock"></use></svg>
+                        </span>
                     </span>
                 {% endif %}
             {% empty %}
-                <p class="map-empty">La ruta aún no está preparada. Pide al administrador que cargue los niveles del juego.</p>
+                <p class="map-empty">La ruta aún no está lista. Pide al administrador que cargue los niveles.</p>
             {% endfor %}
         </div>
-    </nav>
+    </section>
 
-    <p class="map-note">Sigue las marcas doradas y descubre nuevos tonos en cada escala.</p>
-</section>
+    <p class="map-note">Toca un nivel disponible para continuar tu expedición.</p>
+</main>
+
+<nav class="map-mobile-nav" aria-label="Accesos rápidos">
+    <a href="{% url 'mapa_niveles' %}" aria-current="page">
+        <svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg>
+        <span>Ruta</span>
+    </a>
+    <a href="{% url 'bienvenida_jugador' %}">
+        <svg class="icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+        <span>Campamento</span>
+    </a>
+    <a href="{% url 'ajustes_jugador' %}">
+        <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+        <span>Ajustes</span>
+    </a>
+    {% if app_has_management_access %}
+        <a href="{% url 'dashboard_admin' %}">
+            <svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+            <span>Panel</span>
+        </a>
+    {% else %}
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">
+                <svg class="icon" aria-hidden="true"><use href="#icon-logout"></use></svg>
+                <span>Salir</span>
+            </button>
+        </form>
+    {% endif %}
+</nav>
 {% endblock %}

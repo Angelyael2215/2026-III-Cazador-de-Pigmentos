@@ -104,6 +104,7 @@ class LevelAnswerValidationTests(SimpleTestCase):
 
 class LevelsApiTests(TestCase):
     def setUp(self):
+        Level.objects.all().delete()
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION="Bearer valid-token")
         self.level = Level.objects.create(
@@ -224,6 +225,7 @@ class LevelsApiTests(TestCase):
 
 class PlayerGamePageTests(TestCase):
     def setUp(self):
+        Level.objects.all().delete()
         self.user = get_user_model().objects.create_user(
             username="color-player",
             password="test-password",
@@ -271,7 +273,8 @@ class PlayerGamePageTests(TestCase):
         response = self.client.get("/gestion/niveles/jugar/1/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, ">Panel</a>")
+        self.assertContains(response, 'href="/gestion/"')
+        self.assertContains(response, 'class="app-navigation__label">Panel</span>')
         self.assertContains(response, "/gestion/")
 
     def test_palette_options_and_legacy_answer_key_work_for_level_three(self):
@@ -307,7 +310,7 @@ class PlayerGamePageTests(TestCase):
             f"/gestion/niveles/jugar/{level.number}/",
             {"answer": json.dumps({"option_id": "a"})},
         )
-        self.assertRedirects(response, f"/gestion/niveles/jugar/{level.number}/")
+        self.assertRedirects(response, "/gestion/jugador/mapa/")
         player.refresh_from_db()
         self.assertEqual(player.current_level_reached, 4)
 
@@ -317,7 +320,7 @@ class PlayerGamePageTests(TestCase):
             {"answer": json.dumps({"option_id": "a"})},
         )
 
-        self.assertRedirects(response, "/gestion/niveles/jugar/1/")
+        self.assertRedirects(response, "/gestion/jugador/mapa/")
         player = Player.objects.get(user=self.user)
         profile = PerfilUsuario.objects.get(usuario=self.user)
         progress = LevelProgress.objects.get(player=player, level=self.level)
@@ -375,7 +378,7 @@ class PlayerGamePageTests(TestCase):
             {"answer": json.dumps({"colors": ["azul", "amarillo"]})},
         )
 
-        self.assertRedirects(response, f"/gestion/niveles/jugar/{level.number}/")
+        self.assertRedirects(response, "/gestion/jugador/mapa/")
         player.refresh_from_db()
         self.assertEqual(player.current_level_reached, 3)
         self.assertTrue(
@@ -408,6 +411,13 @@ class PlayerGamePageTests(TestCase):
         )
 
         self.assertTrue(form.is_valid(), form.errors)
+
+
+class InitialGameLevelsMigrationTests(TestCase):
+    def test_initial_migration_creates_the_twenty_five_game_levels(self):
+        self.assertEqual(Level.objects.count(), len(GAME_LEVELS))
+        self.assertEqual(Level.objects.get(number=1).title, GAME_LEVELS[0]["title"])
+        self.assertEqual(Level.objects.get(number=25).title, GAME_LEVELS[-1]["title"])
 
 
 class SeededGameLevelsTests(TestCase):
@@ -475,6 +485,62 @@ class SeededGameLevelsTests(TestCase):
         self.assertTrue(mix_form.is_valid(), mix_form.errors)
         self.assertFalse(saturation_form.is_valid())
 
+    def test_guided_multiple_choice_form_builds_data_and_private_solution(self):
+        form = LevelForm(
+            data={
+                "number": 26,
+                "kind": "branding",
+                "title": "Identidad cromática",
+                "instruction": "Selecciona la combinación correcta.",
+                "brand_name": "Brújula del Mar",
+                "options_text": "Mar | #176B5B\nFuego | #D84343",
+                "correct_option": "a",
+                "active": True,
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(
+            form.cleaned_data["data"]["options"],
+            [
+                {"id": "a", "label": "Mar", "color": "#176B5B"},
+                {"id": "b", "label": "Fuego", "color": "#D84343"},
+            ],
+        )
+        self.assertEqual(form.cleaned_data["solution"], {"option_id": "a"})
+
+    def test_guided_rgb_form_converts_hex_to_channels(self):
+        form = LevelForm(
+            data={
+                "number": 26,
+                "kind": "rgb",
+                "title": "Luz azul",
+                "instruction": "Iguala el color objetivo.",
+                "reference_color": "#1e88e5",
+                "active": True,
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["data"], {"reference_color": "#1E88E5"})
+        self.assertEqual(form.cleaned_data["solution"], {"rgb": [30, 136, 229]})
+
+    def test_guided_mix_form_rejects_answer_colors_not_in_the_palette(self):
+        form = LevelForm(
+            data={
+                "number": 26,
+                "kind": "mix",
+                "title": "Mezcla de prueba",
+                "instruction": "Combina pigmentos.",
+                "colors": "#112233\n#445566",
+                "answer_colors": "#778899",
+                "active": True,
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("answer_colors", form.errors)
+
     def test_seeded_levels_each_render_their_own_question_and_colors(self):
         player, _ = Player.objects.get_or_create(user=self.user)
         player.current_level_reached = 25
@@ -517,7 +583,11 @@ class SeededGameLevelsTests(TestCase):
 
             self.assertRedirects(
                 response,
-                f"/gestion/niveles/jugar/{number}/",
+                (
+                    f"/gestion/niveles/jugar/{number + 1}/"
+                    if number < 25
+                    else "/gestion/jugador/mapa/"
+                ),
             )
             player = Player.objects.get(user=self.user)
             self.assertEqual(player.current_level_reached, number + 1)
@@ -568,6 +638,7 @@ class SeededGameLevelsTests(TestCase):
 
 class LevelManagementPanelTests(TestCase):
     def setUp(self):
+        Level.objects.all().delete()
         self.admin = get_user_model().objects.create_user(
             username="game-admin",
             password="test-password",
@@ -644,18 +715,19 @@ class LevelManagementPanelTests(TestCase):
         response = self.client.post(
             "/gestion/niveles/juego/nuevo/",
             {
-                "number": 1,
+                "number": 26,
                 "kind": "branding",
                 "title": "Color de marca",
                 "instruction": "Selecciona la marca correcta.",
-                "data": '{"options": [{"id": "a", "color": "#1E88E5"}]}',
-                "solution": '{"option_id": "a"}',
+                "brand_name": "Brújula del Mar",
+                "options_text": "Mar | #1E88E5\nFuego | #E53935",
+                "correct_option": "a",
                 "active": "on",
             },
         )
 
         self.assertRedirects(response, "/gestion/niveles/juego/")
-        level = Level.objects.get(number=1)
+        level = Level.objects.get(number=26)
         self.assertEqual(level.data["options"][0]["id"], "a")
         self.assertEqual(level.solution, {"option_id": "a"})
 
@@ -729,6 +801,7 @@ class LevelManagementPanelTests(TestCase):
 
 class LevelPermissionMatrixTests(TestCase):
     def setUp(self):
+        Level.objects.all().delete()
         user_model = get_user_model()
         self.owner = user_model.objects.create_user(username="matrix-owner")
         self.player = Player.objects.create(user=self.owner)

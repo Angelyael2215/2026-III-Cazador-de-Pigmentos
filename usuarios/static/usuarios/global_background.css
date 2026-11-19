@@ -1,3 +1,10 @@
-.global-background {
-    background: url("images/dashboard-wood-background.jpeg") center center / cover fixed no-repeat;
+.global-background:not(.admin-panel-body) {
+    background:
+        radial-gradient(ellipse at 8% 8%, rgb(213 184 129 / 22%), transparent 29rem),
+        radial-gradient(ellipse at 92% 84%, rgb(42 89 78 / 8%), transparent 32rem),
+        #eee7d8;
+}
+
+.global-background.map-page {
+    background: #f0f2ed;
 }
