@@ -139,9 +139,20 @@ def ajustes_jugador(request):
         ajustes.color_fondo_hex = request.POST.get("color_fondo_hex", "#FFFFFF")
         ajustes.color_texto_hex = request.POST.get("color_texto_hex", "#000000")
         ajustes.save()
-        return redirect("bienvenida_jugador")
+        return redirect("cuenta_jugador")
 
     return render(request, "usuarios/ajustes.html", {"ajustes": ajustes})
+
+
+@login_required
+def cuenta_jugador(request):
+    perfil, _ = PerfilUsuario.objects.get_or_create(usuario=request.user)
+    player, _ = Player.objects.get_or_create(user=request.user)
+    return render(
+        request,
+        "usuarios/cuenta_jugador.html",
+        {"perfil": perfil, "player": player},
+    )
 
 
 # VISTAS PROTEGIDAS (SOLO ADMINISTRADORES)

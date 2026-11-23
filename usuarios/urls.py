@@ -19,6 +19,7 @@ urlpatterns = [
     path("login/", AppLoginView.as_view(), name="login"),
     path("logout/", AppLogoutView.as_view(), name="logout"),
     path("jugador/", views.bienvenida_jugador, name="bienvenida_jugador"),
+    path("jugador/cuenta/", views.cuenta_jugador, name="cuenta_jugador"),
     path("", views.dashboard_admin, name="dashboard_admin"),
 
     path("permisos/", views.gestion_permisos, name="gestion_permisos"),

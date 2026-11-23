@@ -13,6 +13,57 @@ from .permissions import get_management_sections, has_management_access
 from .views import es_administrador
 
 
+class AccountAndSettingsTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="account-viewer",
+            password="test-password",
+            first_name="Ana",
+            last_name="Color",
+            email="ana@example.com",
+        )
+        self.client.force_login(self.user)
+
+    def test_account_page_shows_user_details_and_accessibility_settings(self):
+        response = self.client.get("/gestion/jugador/cuenta/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ana Color")
+        self.assertContains(response, "account-viewer")
+        self.assertContains(response, "ana@example.com")
+        self.assertContains(response, "Información de la cuenta")
+        self.assertContains(response, 'href="/gestion/jugador/ajustes/"')
+        self.assertContains(response, 'href="/gestion/jugador/cuenta/"')
+
+    def test_accessibility_settings_return_to_account_and_share_app_layout(self):
+        response = self.client.get("/gestion/jugador/ajustes/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Filtro de daltonismo")
+        self.assertContains(response, "Guardar cambios")
+        self.assertContains(response, 'href="/gestion/jugador/cuenta/"')
+        self.assertContains(response, "/static/usuarios/adventure.css?v=6")
+        self.assertNotContains(response, 'class="app-navigation__label">Ajustes</span>')
+
+    def test_map_provides_account_access_instead_of_direct_settings(self):
+        response = self.client.get("/gestion/jugador/mapa/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/gestion/jugador/cuenta/"')
+        self.assertContains(response, "<span>Cuenta</span>")
+        self.assertNotContains(response, 'href="/gestion/jugador/ajustes/"')
+
+    def test_account_page_requires_authentication(self):
+        self.client.logout()
+
+        response = self.client.get("/gestion/jugador/cuenta/")
+
+        self.assertRedirects(
+            response,
+            "/gestion/login/?next=/gestion/jugador/cuenta/",
+        )
+
+
 class ProfilePermissionTests(TestCase):
     def setUp(self):
         self.profile = PerfilUsuario.objects.create(
@@ -47,6 +98,85 @@ class ProfilePermissionTests(TestCase):
         self.assertNotContains(response, "<span>Roles</span>")
         self.assertNotContains(response, "<span>Usuarios</span>")
 
+    def test_management_menu_is_available_outside_the_dashboard(self):
+        user = get_user_model().objects.create_user(
+            username="navigation-profile-reader",
+            password="test-password",
+        )
+        role = Group.objects.create(name="navigation-profile-reader")
+        role.permissions.add(
+            Permission.objects.get(
+                content_type__app_label="usuarios",
+                codename="view_perfilusuario",
+            )
+        )
+        user.groups.add(role)
+        self.client.force_login(user)
+
+        response = self.client.get("/gestion/jugador/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            '<span class="app-navigation__label">Gestión</span>',
+        )
+        self.assertContains(response, 'href="/gestion/perfiles/"')
+        self.assertNotContains(response, 'href="/gestion/roles/"')
+
+    def test_read_only_profile_permission_blocks_writes_and_updates_immediately(self):
+        user = get_user_model().objects.create_user(
+            username="profile-read-only",
+            password="test-password",
+        )
+        profile = PerfilUsuario.objects.create(usuario=user)
+        role = Group.objects.create(name="profile-read-only")
+        view_permission = Permission.objects.get(
+            content_type__app_label="usuarios",
+            codename="view_perfilusuario",
+        )
+        change_permission = Permission.objects.get(
+            content_type__app_label="usuarios",
+            codename="change_perfilusuario",
+        )
+        role.permissions.add(view_permission)
+        user.groups.add(role)
+        self.client.force_login(user)
+        edit_url = f"/gestion/perfiles/{profile.pk}/editar/"
+
+        self.assertEqual(self.client.get("/gestion/perfiles/").status_code, 200)
+        self.assertEqual(self.client.get(edit_url).status_code, 403)
+        self.assertEqual(
+            self.client.post(
+                edit_url,
+                {"vidas": 1, "gemas": 0, "nivel_maximo_desbloqueado": 1},
+            ).status_code,
+            403,
+        )
+        profile.refresh_from_db()
+        self.assertEqual(profile.vidas, 5)
+
+        role.permissions.add(change_permission)
+        self.assertEqual(self.client.get(edit_url).status_code, 200)
+        response = self.client.post(
+            edit_url,
+            {"vidas": 3, "gemas": 0, "nivel_maximo_desbloqueado": 1},
+        )
+        self.assertEqual(response.status_code, 302)
+        profile.refresh_from_db()
+        self.assertEqual(profile.vidas, 3)
+
+        role.permissions.remove(change_permission)
+        self.assertEqual(self.client.get(edit_url).status_code, 403)
+        self.assertEqual(
+            self.client.post(
+                edit_url,
+                {"vidas": 1, "gemas": 0, "nivel_maximo_desbloqueado": 1},
+            ).status_code,
+            403,
+        )
+        profile.refresh_from_db()
+        self.assertEqual(profile.vidas, 3)
+
     def test_player_sees_game_navigation_without_administration_links(self):
         user = get_user_model().objects.create_user(
             username="navigation-player",
@@ -59,6 +189,7 @@ class ProfilePermissionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'aria-label="Navegación principal"')
         self.assertContains(response, 'href="/gestion/jugador/"')
+        self.assertContains(response, 'href="/gestion/jugador/cuenta/"')
         self.assertContains(response, 'aria-current="page"')
         self.assertContains(response, "Cerrar sesión")
         self.assertContains(response, 'method="post"')
@@ -66,6 +197,7 @@ class ProfilePermissionTests(TestCase):
         self.assertNotContains(response, ">Panel</a>")
         self.assertNotContains(response, ">Usuarios</a>")
         self.assertNotContains(response, ">Roles</a>")
+        self.assertNotContains(response, 'href="/gestion/jugador/ajustes/"')
 
         logout_response = self.client.post("/gestion/logout/")
         self.assertEqual(logout_response.status_code, 302)
@@ -145,6 +277,7 @@ class ProfilePermissionTests(TestCase):
 
         self.assertContains(response, 'href="#main-content"')
         self.assertContains(response, "Saltar al contenido principal")
+        self.assertContains(response, 'class="app-navigation__brand"')
         self.assertContains(response, '/static/usuarios/app_navigation.css')
         stylesheet = (
             Path(__file__).parent / "static" / "usuarios" / "app_navigation.css"

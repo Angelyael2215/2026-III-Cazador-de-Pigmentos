@@ -1,0 +1,77 @@
+{% extends "usuarios/base.html" %}
+
+{% block title %}Mi cuenta | Cazadores de Pigmentos{% endblock %}
+
+{% block content %}
+<section class="account-page" aria-labelledby="account-title">
+    <header class="account-heading">
+        <span class="account-heading__avatar" aria-hidden="true">
+            {{ request.user.username|first|upper }}
+        </span>
+        <div>
+            <p class="account-heading__eyebrow">Tu espacio personal</p>
+            <h1 id="account-title">{{ request.user.get_full_name|default:request.user.username }}</h1>
+            <p>Consulta tu información y configura tu experiencia de juego.</p>
+        </div>
+    </header>
+
+    <div class="account-grid">
+        <section class="account-card" aria-labelledby="account-details-title">
+            <h2 id="account-details-title">
+                <svg class="icon" aria-hidden="true"><use href="#icon-user"></use></svg>
+                Información de la cuenta
+            </h2>
+            <dl class="account-details">
+                <div>
+                    <dt>Nombre de usuario</dt>
+                    <dd>{{ request.user.username }}</dd>
+                </div>
+                <div>
+                    <dt>Nombre completo</dt>
+                    <dd>{{ request.user.get_full_name|default:"No agregado" }}</dd>
+                </div>
+                <div>
+                    <dt>Correo electrónico</dt>
+                    <dd>{{ request.user.email|default:"No registrado" }}</dd>
+                </div>
+                <div>
+                    <dt>Cuenta creada</dt>
+                    <dd>{{ request.user.date_joined|date:"d/m/Y" }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="account-card account-card--progress" aria-labelledby="account-progress-title">
+            <h2 id="account-progress-title">
+                <svg class="icon" aria-hidden="true"><use href="#icon-star"></use></svg>
+                Tu progreso
+            </h2>
+            <div class="account-stats">
+                <div><span>Vidas</span><strong>{{ perfil.vidas }}</strong></div>
+                <div><span>Gemas</span><strong>{{ perfil.gemas }}</strong></div>
+                <div><span>Nivel máximo</span><strong>{{ perfil.nivel_maximo_desbloqueado }}</strong></div>
+                <div><span>Experiencia</span><strong>{{ player.xp }}</strong></div>
+            </div>
+        </section>
+
+        <section class="account-card account-card--settings" aria-labelledby="account-settings-title">
+            <span class="account-settings-mark" aria-hidden="true">
+                <svg class="icon"><use href="#icon-eye"></use></svg>
+            </span>
+            <div class="account-settings-copy">
+                <h2 id="account-settings-title">Accesibilidad</h2>
+                <p>Ajusta la visualización del color para que la experiencia se adapte a ti.</p>
+            </div>
+            <a class="account-action" href="{% url 'ajustes_jugador' %}">
+                <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+                Configurar ajustes
+            </a>
+        </section>
+    </div>
+
+    <a class="account-return" href="{% url 'bienvenida_jugador' %}">
+        <svg class="icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg>
+        Volver al juego
+    </a>
+</section>
+{% endblock %}
