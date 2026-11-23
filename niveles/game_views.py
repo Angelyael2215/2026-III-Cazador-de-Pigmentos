@@ -1,11 +1,14 @@
 import json
 import re
+import random
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from usuarios.models import PerfilUsuario
 from .level_data import level_options
@@ -92,9 +95,17 @@ def level_visual_data(level):
         return {}
     return {
         key: value
-        for key in ("reference_color", "target_color", "target_hex", "target_background")
+        for key in (
+            "reference_color",
+            "target_color",
+            "target_hex",
+            "target_background",
+            "contrast_word",
+            "deficiency_type",
+        )
         if isinstance((value := data.get(key)), str)
-        and re.fullmatch(r"#[0-9a-fA-F]{6}", value)
+        and (key not in {"reference_color", "target_color", "target_hex", "target_background"}
+             or re.fullmatch(r"#[0-9a-fA-F]{6}", value))
     }
 
 
@@ -123,6 +134,7 @@ def play_level(request, number):
         raise PermissionDenied("Primero completa los niveles anteriores.")
 
     if request.method == "POST":
+        is_ajax_answer = request.POST.get("ajax") == "1"
         try:
             answer = json.loads(request.POST.get("answer", ""))
             if not isinstance(answer, dict):
@@ -144,12 +156,25 @@ def play_level(request, number):
                     profile.save()
         except (json.JSONDecodeError, KeyError, ValueError) as error:
             messages.error(request, str(error))
+            if is_ajax_answer:
+                return JsonResponse({"correct": False, "error": str(error)}, status=200)
         else:
             if correct:
                 next_level = Level.objects.filter(
                     active=True,
                     number=number + 1,
                 ).first()
+                if is_ajax_answer:
+                    next_url = (
+                        reverse("jugar_nivel", args=[next_level.number])
+                        if next_level
+                        else reverse("mapa_niveles")
+                    )
+                    return JsonResponse({
+                        "correct": True,
+                        "next_url": next_url,
+                        "earned_xp": earned_xp,
+                    })
                 if next_level:
                     message = (
                         "¡Muy bien! Sigue con el siguiente nivel."
@@ -167,11 +192,16 @@ def play_level(request, number):
                 messages.success(request, message)
                 return redirect("mapa_niveles")
 
+            if is_ajax_answer:
+                return JsonResponse({"correct": False, "error": "Prueba otra vez."})
             messages.warning(request, "Prueba otra vez.")
             return redirect("jugar_nivel", number=number)
 
     progress = LevelProgress.objects.filter(player=player, level=level).first()
     discovered_result = discovered_mix_result(level, progress)
+    colors = level_colors(level)
+    if level.kind == "saturation" and len(colors) > 1:
+        random.SystemRandom().shuffle(colors)
     return render(
         request,
         "niveles/jugar_nivel.html",
@@ -179,11 +209,23 @@ def play_level(request, number):
             "level": level,
             "progress": progress,
             "discovered_result": discovered_result,
-            "colors": level_colors(level),
+            "colors": colors,
             "mix_options": level_mix_options(level),
             "options": level_options(level.data),
             "total_levels": Level.objects.filter(active=True).count(),
             "visual_data": level_visual_data(level),
+            "fixed_slots": (
+                level.data.get("fixed_slots")
+                if isinstance(level.data, dict)
+                and isinstance(level.data.get("fixed_slots"), list)
+                else None
+            ),
+            "situation": (
+                level.data.get("situation")
+                if isinstance(level.data, dict)
+                and isinstance(level.data.get("situation"), str)
+                else None
+            ),
             "brand_name": (
                 level.data.get("brand_name")
                 if isinstance(level.data, dict)

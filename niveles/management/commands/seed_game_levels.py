@@ -14,6 +14,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Conserva los niveles existentes con contenido distinto y carga los demás.",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Actualiza los niveles existentes para coincidir con el catálogo actual.",
+        )
 
     def handle(self, *args, **options):
         created = 0
@@ -38,6 +43,12 @@ class Command(BaseCommand):
                     getattr(level, field) != value
                     for field, value in defaults.items()
                 ):
+                    if options["force"]:
+                        for field, value in defaults.items():
+                            setattr(level, field, value)
+                        level.save(update_fields=list(defaults))
+                        existing += 1
+                        continue
                     if options["skip_conflicts"]:
                         conflicts.append(number)
                         continue
