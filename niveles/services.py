@@ -86,7 +86,9 @@ def validate_answer(level, answer):
             raise ValueError("El color RGB objetivo de este nivel no está configurado.")
 
         distance = math.sqrt(sum((a - b) ** 2 for a, b in zip(rgb, target)))
-        return distance < 55
+        maximum_distance = math.sqrt(255 ** 2 * 3)
+        similarity = (1 - distance / maximum_distance) * 100
+        return similarity >= 90
 
     if level.kind == "temperature":
         if not isinstance(solution.get("warm"), list) or not isinstance(
