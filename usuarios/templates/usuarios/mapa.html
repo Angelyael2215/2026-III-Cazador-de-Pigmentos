@@ -6,7 +6,7 @@
 {% block content %}
 <main class="map-screen" aria-labelledby="map-title">
     <header class="map-hud">
-        <a class="map-hud__profile" href="{% url 'bienvenida_jugador' %}" aria-label="Ir a mi perfil">
+        <a class="map-hud__profile" href="{% url 'cuenta_jugador' %}" aria-label="Ver mi cuenta">
             <span class="map-hud__avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
             <span class="map-hud__greeting">
                 <small>Jugador</small>
@@ -30,9 +30,6 @@
                 <small>XP</small>
             </span>
         </div>
-        <a class="map-hud__settings" href="{% url 'ajustes_jugador' %}" aria-label="Ajustes">
-            <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
-        </a>
     </header>
 
     <section class="map-intro">
@@ -106,9 +103,9 @@
         <svg class="icon" aria-hidden="true"><use href="#icon-home"></use></svg>
         <span>Campamento</span>
     </a>
-    <a href="{% url 'ajustes_jugador' %}">
-        <svg class="icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
-        <span>Ajustes</span>
+    <a href="{% url 'cuenta_jugador' %}">
+        <svg class="icon" aria-hidden="true"><use href="#icon-user"></use></svg>
+        <span>Cuenta</span>
     </a>
     {% if app_has_management_access %}
         <a href="{% url 'dashboard_admin' %}">

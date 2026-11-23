@@ -14,10 +14,6 @@ def app_navigation(request):
             "url_name": destination,
             "is_current": current_url_name in section["active_url_names"],
         })
-    management_page = current_url_name == "dashboard_admin" or any(
-        section["is_current"] for section in sections
-    )
-
     is_teacher = (
         user.is_authenticated
         and user.is_active
@@ -34,7 +30,6 @@ def app_navigation(request):
             and user.is_active
             and (user.is_staff or user.is_superuser or bool(management_sections))
         ),
-        "app_navigation_is_management_current": management_page,
         "app_is_teacher": is_teacher,
         "app_navigation_is_game_current": current_url_name in {
             "bienvenida_jugador",
