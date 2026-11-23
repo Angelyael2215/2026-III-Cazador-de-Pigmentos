@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#173b3b">
     <title>Nivel {{ level.number }} · Cazadores de Pigmentos</title>
-    <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}">
+    <link rel="stylesheet" href="{% static 'usuarios/adventure.css' %}?v=8">
     <link rel="stylesheet" href="{% static 'usuarios/app_navigation.css' %}?v=4">
     <link rel="stylesheet" href="{% static 'usuarios/global_background.css' %}">
 </head>
@@ -34,13 +34,17 @@
             <span class="label-obj">Reto de color</span>
             <h1 id="level-title">{{ level.title }}</h1>
             <p>{{ level.instruction }}</p>
+            {% if situation %}<p class="level-situation"><strong>Situación:</strong> {{ situation }}</p>{% endif %}
             {% if brand_name %}<p class="level-brand">Busca los colores para: <strong>{{ brand_name }}</strong></p>{% endif %}
+            {% if level.kind == "color_blindness" and visual_data.deficiency_type %}
+                <p class="level-brand">Tipo de visión: <strong>{{ visual_data.deficiency_type }}</strong></p>
+            {% endif %}
 
             {% if level.kind != "rgb" %}
                 {% if visual_data.target_hex %}
                     <div class="level-target">
                         <span class="swatch" style="background-color: {{ visual_data.target_hex }}" aria-hidden="true"></span>
-                        <span>Encuentra el mismo color</span>
+                        <span>Encuentra el mismo color <strong>{{ visual_data.target_hex }}</strong></span>
                     </div>
                 {% elif visual_data.reference_color %}
                     <div class="level-target">
@@ -131,6 +135,7 @@
                                 <input type="range" min="0" max="255" value="128" data-rgb-channel="2" aria-label="Azul">
                             </label>
                         </div>
+                        <p class="rgb-match" data-rgb-match>Coincidencia: 0%</p>
                     </div>
                 </fieldset>
             {% elif level.kind == "mix" %}
@@ -166,7 +171,7 @@
                                 <span>Tu selección</span>
                             </div>
                             <div class="pigment-dropzone" data-mix-dropzone tabindex="0" role="group" aria-label="Zona para agregar pigmentos">
-                                <div class="pigment-bowl" aria-hidden="true">
+                                <div class="pigment-bowl" data-mix-bowl aria-hidden="true">
                                     <svg class="icon"><use href="#icon-chemistry"></use></svg>
                                 </div>
                                 <div class="pigment-selection">
@@ -181,17 +186,27 @@
             {% elif level.kind == "temperature" %}
                 <fieldset class="challenge-fieldset">
                     <legend>¿Fuego o hielo?</legend>
-                    <div class="temperature-list">
+                    <p class="challenge-hint">Arrastra cada muestra al cuadrado que le corresponda.</p>
+                    <div class="temperature-board">
                         {% for color in colors %}
-                            <div class="temperature-choice" data-temperature-color="{{ color }}">
-                                <span class="swatch" style="background-color: {{ color }}" aria-hidden="true"></span>
-                                <strong>Muestra {{ forloop.counter }}</strong>
-                                <label><input type="radio" name="temperature-{{ forloop.counter }}" value="warm"><svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg> Fuego</label>
-                                <label><input type="radio" name="temperature-{{ forloop.counter }}" value="cold"><svg class="icon" aria-hidden="true"><use href="#icon-snow"></use></svg> Hielo</label>
-                            </div>
+                            <button type="button" class="temperature-token" draggable="true" data-temperature-color="{{ color }}" style="--token-color: {{ color }}">
+                                <span>Muestra {{ forloop.counter }}</span>
+                            </button>
                         {% empty %}
                             <p>Este reto aún no tiene pigmentos configurados.</p>
                         {% endfor %}
+                    </div>
+                    <div class="temperature-zones">
+                        <div class="temperature-zone temperature-zone--cold" data-temperature-zone="cold">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-snow"></use></svg>
+                            <strong>Colores fríos</strong>
+                            <span data-temperature-items></span>
+                        </div>
+                        <div class="temperature-zone temperature-zone--warm" data-temperature-zone="warm">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg>
+                            <strong>Colores calientes</strong>
+                            <span data-temperature-items></span>
+                        </div>
                     </div>
                 </fieldset>
             {% elif level.kind == "saturation" %}
@@ -211,6 +226,66 @@
                             <li>Este reto aún no tiene pigmentos configurados.</li>
                         {% endfor %}
                     </ol>
+                </fieldset>
+            {% elif level.kind == "contrast" or level.kind == "albers" %}
+                <fieldset class="challenge-fieldset">
+                    <legend>Elige la tinta con mejor contraste</legend>
+                    <div class="contrast-lab">
+                        <div class="contrast-sample" data-contrast-sample style="background-color: {{ visual_data.target_background }}">
+                            <strong>{% if visual_data.contrast_word %}{{ visual_data.contrast_word }}{% else %}Pigmento{% endif %}</strong>
+                        </div>
+                        <div class="challenge-options">
+                            {% for option in options %}
+                                <label class="challenge-option">
+                                    <input type="radio" name="option" value="{{ option.id }}" data-contrast-option>
+                                    <span class="challenge-option__body">
+                                        <strong>{{ option.label }}</strong>
+                                        {% for color in option.colors %}
+                                            <span class="swatch" style="background-color: {{ color }}" aria-label="Color {{ color }}"></span>
+                                        {% endfor %}
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </fieldset>
+            {% elif level.kind == "gradient" %}
+                <fieldset class="challenge-fieldset">
+                    <legend>Completa la escala cromática</legend>
+                    <p class="challenge-hint">Elige qué color va en el espacio central.</p>
+                    <div class="gradient-scale" aria-label="Escala cromática">
+                        {% if fixed_slots %}
+                            {% for color in fixed_slots %}
+                                {% if color %}
+                                    <span class="gradient-scale__fixed" style="background-color: {{ color }}">
+                                        <small>{% if forloop.first %}Inicio{% elif forloop.last %}Final{% else %}Escala{% endif %}</small>
+                                    </span>
+                                {% else %}
+                                    <span class="gradient-scale__missing" data-gradient-missing>¿?</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {% for color in colors %}
+                                <span class="gradient-scale__fixed" style="background-color: {{ color }}">
+                                    <small>{% if forloop.first %}Inicio{% else %}Final{% endif %}</small>
+                                </span>
+                                {% if forloop.first %}<span class="gradient-scale__missing" data-gradient-missing>¿?</span>{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="challenge-options">
+                        {% for option in options %}
+                            <label class="challenge-option">
+                                <input type="radio" name="option" value="{{ option.id }}" data-gradient-option>
+                                <span class="challenge-option__body">
+                                    <strong>{{ option.label }}</strong>
+                                    {% for color in option.colors %}
+                                        <span class="swatch" style="background-color: {{ color }}" aria-label="Color {{ color }}"></span>
+                                    {% endfor %}
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
                 </fieldset>
             {% else %}
                 <fieldset class="challenge-fieldset">
@@ -246,8 +321,31 @@
         </form>
     </div>
 </main>
+<div class="game-modal" data-success-modal hidden role="dialog" aria-modal="true" aria-labelledby="success-title">
+    <div class="game-modal__card">
+        <span class="game-modal__icon" aria-hidden="true">★</span>
+        <h2 id="success-title">¡Felicidades!</h2>
+        <p>Completaste el nivel y podrás continuar en el mapa.</p>
+    </div>
+</div>
+<div class="game-modal" data-retry-modal hidden role="dialog" aria-modal="true" aria-labelledby="retry-title">
+    <div class="game-modal__card">
+        <span class="game-modal__icon game-modal__icon--retry" aria-hidden="true">?</span>
+        <h2 id="retry-title">Casi lo logras</h2>
+        <p data-retry-message>¿Quieres seguir intentando?</p>
+        <div class="game-modal__actions">
+            <button type="button" class="btn-comprobar" data-retry-continue>Continuar intentando</button>
+            <button type="button" class="btn-secondary" data-retry-map>Regresar al mapa</button>
+        </div>
+    </div>
+</div>
+<div class="game-loading" data-game-loading hidden role="status" aria-live="polite">
+    <span class="game-loading__spinner" aria-hidden="true"></span>
+    <strong>Cargando la siguiente pantalla...</strong>
+</div>
 <script>
     document.getElementById("answer-form").addEventListener("submit", function (event) {
+        event.preventDefault();
         const answer = {};
         const kind = "{{ level.kind }}";
         const feedback = document.querySelector("[data-answer-error]");
@@ -263,24 +361,25 @@
                 document.querySelectorAll("[data-mix-pigment][aria-pressed='true']"),
                 (button) => button.dataset.pigmentId
             );
-            if (!answer.colors.length) {
-                event.preventDefault();
-                feedback.textContent = "Toca al menos un color para continuar.";
+            if (answer.colors.length !== 2) {
+                feedback.textContent = "Coloca exactamente dos colores en el cuenco.";
                 feedback.hidden = false;
                 return;
             }
         } else if (kind === "temperature") {
             answer.warm = [];
             answer.cold = [];
-            for (const item of document.querySelectorAll("[data-temperature-color]")) {
-                const selected = item.querySelector("input:checked");
-                if (!selected) {
-                    event.preventDefault();
+            for (const zone of document.querySelectorAll("[data-temperature-zone]")) {
+                for (const token of zone.querySelectorAll("[data-temperature-color]")) {
+                    answer[zone.dataset.temperatureZone].push(token.dataset.temperatureColor);
+                }
+            }
+            const allTokens = document.querySelectorAll("[data-temperature-color]");
+            const assignedTokens = document.querySelectorAll("[data-temperature-zone] [data-temperature-color]");
+            if (allTokens.length !== assignedTokens.length) {
                     feedback.textContent = "Elige fuego o hielo para cada muestra.";
                     feedback.hidden = false;
                     return;
-                }
-                answer[selected.value].push(item.dataset.temperatureColor);
             }
         } else if (kind === "saturation") {
             answer.order = Array.from(
@@ -290,7 +389,6 @@
         } else {
             const selected = document.querySelector('input[name="option"]:checked');
             if (!selected) {
-                event.preventDefault();
                 feedback.textContent = "Toca una opción para continuar.";
                 feedback.hidden = false;
                 return;
@@ -298,20 +396,149 @@
             answer.option_id = selected.value;
         }
 
-        document.getElementById("answer").value = JSON.stringify(answer);
+        const form = event.currentTarget;
+        const body = new FormData();
+        body.append("csrfmiddlewaretoken", form.querySelector("[name=csrfmiddlewaretoken]").value);
+        body.append("ajax", "1");
+        body.append("answer", JSON.stringify(answer));
+
+        fetch(form.action || window.location.href, {
+            method: "POST",
+            headers: {"X-Requested-With": "XMLHttpRequest"},
+            body,
+        })
+            .then((response) => response.json())
+            .then((result) => {
+                if (result.correct) {
+                    const modal = document.querySelector("[data-success-modal]");
+                    modal.hidden = false;
+                    window.setTimeout(
+                        () => showLoading("{% url 'mapa_niveles' %}"),
+                        900
+                    );
+                } else {
+                    document.querySelector("[data-retry-message]").textContent =
+                        result.error || "¿Quieres seguir intentando?";
+                    document.querySelector("[data-retry-modal]").hidden = false;
+                }
+            })
+            .catch(() => {
+                feedback.textContent = "No pudimos comprobar tu respuesta. Inténtalo otra vez.";
+                feedback.hidden = false;
+            });
     });
+
+    function showLoading(url) {
+        const loading = document.querySelector("[data-game-loading]");
+        loading.hidden = false;
+        window.setTimeout(() => { window.location.href = url; }, 850);
+    }
+
+    document.querySelector("[data-retry-continue]").addEventListener("click", function () {
+        document.querySelector("[data-retry-modal]").hidden = true;
+    });
+
+    document.querySelector("[data-retry-map]").addEventListener("click", function () {
+        document.querySelector("[data-retry-modal]").hidden = true;
+        showLoading("{% url 'mapa_niveles' %}");
+    });
+
+    const temperatureBoard = document.querySelector(".temperature-board");
+    if (temperatureBoard) {
+        const temperatureZones = document.querySelectorAll("[data-temperature-zone]");
+
+        document.querySelector(".challenge-fieldset").addEventListener("dragstart", function (event) {
+            const token = event.target.closest("[data-temperature-color]");
+            if (!token) return;
+            event.dataTransfer.setData("text/plain", token.dataset.temperatureColor);
+        });
+
+        for (const zone of temperatureZones) {
+            zone.addEventListener("dragover", function (event) {
+                event.preventDefault();
+            });
+            zone.addEventListener("drop", function (event) {
+                event.preventDefault();
+                const color = event.dataTransfer.getData("text/plain");
+                const token = document.querySelector(`[data-temperature-color="${color}"]`);
+                if (token) zone.querySelector("[data-temperature-items]").append(token);
+            });
+        }
+    }
+
+    for (const option of document.querySelectorAll("[data-contrast-option]")) {
+        option.addEventListener("change", function () {
+            const sample = document.querySelector("[data-contrast-sample]");
+            const swatch = option.closest("label").querySelector(".swatch");
+            if (sample && swatch) {
+                sample.classList.add("contrast-sample--selected");
+                sample.style.color = getComputedStyle(swatch).backgroundColor;
+            }
+        });
+    }
+
+    for (const option of document.querySelectorAll("[data-gradient-option]")) {
+        option.addEventListener("change", function () {
+            const missing = document.querySelector("[data-gradient-missing]");
+            const swatch = option.closest("label").querySelector(".swatch");
+            if (missing && swatch) {
+                missing.style.backgroundColor = swatch.style.backgroundColor;
+                missing.textContent = "";
+            }
+        });
+    }
+
+    if ("{{ level.kind }}" === "hex") {
+        const targetHex = "{{ visual_data.target_hex }}".toLowerCase();
+        const colorDistance = (a, b) => {
+            const parseHex = (hex) => [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16));
+            const parseRgb = (rgb) => rgb.match(/\d+/g).slice(0, 3).map(Number);
+            const ac = a.startsWith("#") ? parseHex(a) : parseRgb(a);
+            const bc = b.startsWith("#") ? parseHex(b) : parseRgb(b);
+            return Math.sqrt(ac.reduce((sum, channel, index) => sum + (channel - bc[index]) ** 2, 0));
+        };
+        document.querySelectorAll('input[name="option"]').forEach((input) => {
+            input.addEventListener("change", function () {
+                const swatch = input.closest("label").querySelector(".swatch");
+                if (!swatch) return;
+                const selectedColor = getComputedStyle(swatch).backgroundColor;
+                const distance = colorDistance(targetHex, selectedColor || targetHex);
+                document.querySelector("[data-answer-error]").textContent =
+                    distance < 55
+                        ? "¡Estás muy cerca!"
+                        : distance < 120
+                            ? "Estás cerca, pero puedes probar otra opción."
+                            : "Tu elección está lejos del color mostrado.";
+                document.querySelector("[data-answer-error]").hidden = false;
+            });
+        });
+    }
 
     const rgbLab = document.querySelector("[data-rgb-lab]");
     if (rgbLab) {
         const sliders = Array.from(rgbLab.querySelectorAll("[data-rgb-channel]"));
         const preview = rgbLab.querySelector("[data-rgb-preview]");
+        const matchText = rgbLab.querySelector("[data-rgb-match]");
+        const targetHex = "{{ visual_data.reference_color }}";
+        const target = targetHex
+            ? [1, 3, 5].map((index) => parseInt(targetHex.slice(index, index + 2), 16))
+            : [30, 136, 229];
 
         function updateRgbPreview() {
             const channels = sliders.map((slider) => Number(slider.value));
             preview.style.backgroundColor = `rgb(${channels.join(", ")})`;
+            const distance = Math.sqrt(channels.reduce(
+                (sum, channel, index) => sum + (channel - target[index]) ** 2,
+                0
+            ));
+            const maximumDistance = Math.sqrt(255 ** 2 * 3);
+            const similarity = Math.max(0, Math.min(100, Math.round((1 - distance / maximumDistance) * 100)));
+            matchText.textContent = `Coincidencia: ${similarity}%${similarity >= 90 ? " — ¡Color logrado!" : ""}`;
+            matchText.classList.toggle("rgb-match--ready", similarity >= 90);
         }
 
         sliders.forEach((slider) => slider.addEventListener("input", updateRgbPreview));
+        updateRgbPreview();
     }
 
     const mixLab = document.querySelector("[data-mix-lab]");
@@ -321,11 +548,37 @@
         const selectedContainer = mixLab.querySelector("[data-mix-selected]");
         const emptyMessage = mixLab.querySelector("[data-mix-empty]");
         const dropzone = mixLab.querySelector("[data-mix-dropzone]");
+        const bowl = mixLab.querySelector("[data-mix-bowl]");
         let suppressClickUntil = 0;
+
+        const knownMixtures = {
+            "#1E88E5|#E53935": "#7B1FA2",
+            "#E53935|#1E88E5": "#7B1FA2",
+            "#1565C0|#FDD835": "#43A047",
+            "#FDD835|#1565C0": "#43A047",
+            "#F44336|#FDD835": "#F4511E",
+            "#FDD835|#F44336": "#F4511E",
+            "#3949AB|#D81B60": "#8E24AA",
+            "#D81B60|#3949AB": "#8E24AA",
+        };
+
+        function mixHexPair(firstHex, secondHex) {
+            const known = knownMixtures[`${firstHex.toUpperCase()}|${secondHex.toUpperCase()}`];
+            if (known) return known;
+            const parse = (hex) => [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16));
+            const first = parse(firstHex);
+            const second = parse(secondHex);
+            const mixed = first.map((channel, index) => Math.round((channel + second[index]) / 2));
+            return `#${mixed.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+        }
 
         function updateMixSelection() {
             selectedContainer.replaceChildren();
             emptyMessage.hidden = selectedPigments.size > 0;
+            bowl.style.backgroundColor = "";
+            bowl.classList.remove("pigment-bowl--mixed");
+            bowl.style.borderRadius = "";
+            bowl.querySelector(".icon").style.opacity = "";
             for (const button of mixLab.querySelectorAll("[data-mix-pigment]")) {
                 const isSelected = selectedPigments.has(button.dataset.pigmentId);
                 button.setAttribute("aria-pressed", String(isSelected));
@@ -339,9 +592,28 @@
                 selectedContainer.append(item);
             }
 
-            status.textContent = selectedPigments.size
-                ? `${selectedPigments.size} pigmento${selectedPigments.size === 1 ? "" : "s"} en el cuenco.`
-                : "Elige los pigmentos que formarán la mezcla.";
+            if (selectedPigments.size === 0) {
+                status.textContent = "Elige los pigmentos que formarán la mezcla.";
+            } else if (selectedPigments.size === 1) {
+                status.textContent = "Seleccionaste 1 pigmento. Agrega otro para ver el resultado.";
+            } else {
+                const selectedButtons = Array.from(mixLab.querySelectorAll("[data-mix-pigment][aria-pressed='true']"));
+                const mixedHex = mixHexPair(
+                    selectedButtons[0].dataset.pigmentColor,
+                    selectedButtons[1].dataset.pigmentColor
+                );
+                bowl.style.backgroundColor = mixedHex;
+                bowl.style.borderRadius = "50%";
+                bowl.classList.add("pigment-bowl--mixed");
+                bowl.querySelector(".icon").style.opacity = "0.18";
+                status.textContent = `Resultado estimado: ${mixedHex}`;
+            }
+            if (selectedPigments.size === 0) {
+                bowl.style.backgroundColor = "";
+                bowl.style.borderRadius = "";
+                bowl.classList.remove("pigment-bowl--mixed");
+                bowl.querySelector(".icon").style.opacity = "";
+            }
         }
 
         mixLab.addEventListener("click", function (event) {
@@ -352,6 +624,10 @@
             if (selectedPigments.has(pigmentId)) {
                 selectedPigments.delete(pigmentId);
             } else {
+                if (selectedPigments.size >= 2) {
+                    status.textContent = "Solo puedes mezclar dos colores.";
+                    return;
+                }
                 selectedPigments.add(pigmentId);
             }
             updateMixSelection();
@@ -375,6 +651,10 @@
             const button = Array.from(mixLab.querySelectorAll("[data-mix-pigment]"))
                 .find((item) => item.dataset.pigmentId === pigmentId);
             if (button) {
+                if (selectedPigments.size >= 2) {
+                    status.textContent = "Solo puedes mezclar dos colores.";
+                    return;
+                }
                 selectedPigments.add(pigmentId);
                 suppressClickUntil = Date.now() + 500;
                 updateMixSelection();
@@ -384,6 +664,13 @@
 
     const colorOrder = document.getElementById("color-order");
     if (colorOrder) {
+        const items = Array.from(colorOrder.querySelectorAll("li"));
+        for (let index = items.length - 1; index > 0; index -= 1) {
+            const swapIndex = Math.floor(Math.random() * (index + 1));
+            [items[index], items[swapIndex]] = [items[swapIndex], items[index]];
+        }
+        items.forEach((item) => colorOrder.append(item));
+
         colorOrder.addEventListener("click", function (event) {
             const button = event.target.closest("[data-move]");
             if (!button) return;

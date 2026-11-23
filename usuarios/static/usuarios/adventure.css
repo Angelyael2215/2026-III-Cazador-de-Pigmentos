@@ -5,8 +5,8 @@
     --adventure-deep-2: #244f4b;
     --adventure-brass: #b98235;
     --adventure-gold: #e2b45e;
-    --adventure-paper: #f7edda;
-    --adventure-paper-light: #fffaf0;
+    --adventure-paper: #1a2c2c;
+    --adventure-paper-light: #1a2c2c;
     --adventure-line: #d7c39e;
     --adventure-shadow: 0 16px 38px rgb(46 35 20 / 16%);
 }
@@ -26,7 +26,7 @@ body {
     background:
         radial-gradient(ellipse at 10% 12%, rgb(217 188 131 / 22%), transparent 28rem),
         radial-gradient(ellipse at 90% 82%, rgb(42 89 78 / 9%), transparent 32rem),
-        #eee3ce;
+        #1a2c2c;
 }
 
 button,
@@ -385,9 +385,9 @@ textarea:focus-visible {
 .levels-card {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #d7c49f;
+    border: 1px solid #1a2c2c;
     border-radius: 18px;
-    background: linear-gradient(145deg, #fffaf0, #f3e7ce);
+    background: linear-gradient(145deg, #1a2c2c, #1a2c2c);
     box-shadow: var(--adventure-shadow);
 }
 
@@ -1483,6 +1483,28 @@ textarea:focus-visible {
     outline-offset: 3px;
 }
 
+.rgb-match {
+    margin: 0;
+    padding: 9px 12px;
+    border-radius: 9px;
+    background: #f3edda;
+    color: #5d5c50;
+    text-align: center;
+    font-weight: 800;
+}
+
+.rgb-match--ready {
+    background: #dff1df;
+    color: #28623a;
+}
+
+.level-situation {
+    padding: 10px 12px;
+    border-left: 4px solid #c79b54;
+    border-radius: 6px;
+    background: #fff7df;
+}
+
 .challenge-option:focus-within {
     outline: 3px solid #276a54;
     outline-offset: 3px;
@@ -1644,6 +1666,16 @@ textarea:focus-visible {
     border-radius: 7px 7px 30px 30px;
     background: linear-gradient(155deg, #f8e6bf, #d6b77c);
     box-shadow: inset 0 -6px 0 rgb(128 86 37 / 12%), 0 3px 5px rgb(66 52 28 / 12%);
+}
+
+.pigment-bowl--mixed {
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
+    border: 4px solid #fff;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 2px #9a6f36, inset 0 -8px 0 rgb(42 42 42 / 12%), 0 5px 10px rgb(66 52 28 / 18%);
+    transition: background-color 180ms ease, transform 180ms ease;
 }
 
 .pigment-bowl::after {
@@ -1887,6 +1919,127 @@ textarea:focus-visible {
     background: #e8d2a4;
 }
 
+.temperature-board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(58px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.temperature-token {
+    min-height: 62px;
+    border: 3px solid #fff;
+    border-radius: 12px;
+    background: var(--token-color);
+    box-shadow: 0 0 0 1px #d4c7a8;
+    color: transparent;
+    cursor: grab;
+}
+
+.temperature-token span {
+    color: #fff;
+    font-size: 0;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 60%);
+}
+
+.temperature-zones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.temperature-zone {
+    display: grid;
+    min-height: 130px;
+    place-items: center;
+    align-content: center;
+    gap: 8px;
+    border: 2px dashed #9fb1a6;
+    border-radius: 14px;
+    background: #eef5f2;
+    color: #41594e;
+}
+
+.temperature-zone--warm {
+    border-color: #d39b69;
+    background: #fff1dd;
+}
+
+.temperature-zone .icon {
+    width: 26px;
+    height: 26px;
+}
+
+.temperature-zone [data-temperature-items] {
+    display: grid;
+    grid-template-columns: repeat(2, 54px);
+    gap: 8px;
+    justify-content: center;
+}
+
+.temperature-zone [data-temperature-items] .temperature-token {
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+    border-radius: 8px;
+}
+
+.contrast-lab {
+    display: grid;
+    gap: 12px;
+}
+
+.contrast-sample {
+    display: grid;
+    min-height: 112px;
+    place-items: center;
+    border: 3px solid #fff;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px #d4c7a8;
+}
+
+.contrast-sample strong {
+    font-size: clamp(1.5rem, 7vw, 3.2rem);
+    color: transparent;
+}
+
+.contrast-sample--selected strong {
+    color: inherit;
+}
+
+.gradient-scale {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.gradient-scale__fixed,
+.gradient-scale__missing {
+    display: grid;
+    min-height: 94px;
+    place-items: center;
+    border: 3px solid #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px #d4c7a8;
+}
+
+.gradient-scale__fixed small {
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 80%);
+    color: #31473d;
+    font-weight: 800;
+}
+
+.gradient-scale__missing {
+    background: #f4eddb;
+    color: #80622e;
+    font-size: 1.6rem;
+    font-weight: 900;
+}
+
 .game-feedback {
     margin: 0;
     padding: 11px 14px;
@@ -1909,6 +2062,96 @@ textarea:focus-visible {
     border-color: #d6a29a;
     background: #fff0ed;
     color: #8e2c22;
+}
+
+.game-modal,
+.game-loading {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgb(28 48 39 / 58%);
+    backdrop-filter: blur(4px);
+}
+
+.game-modal[hidden],
+.game-loading[hidden] {
+    display: none;
+}
+
+.game-modal__card {
+    width: min(420px, 100%);
+    box-sizing: border-box;
+    padding: 28px 24px 22px;
+    border: 1px solid #d8c9a8;
+    border-radius: 18px;
+    background: #fffdf7;
+    box-shadow: 0 18px 50px rgb(30 45 34 / 30%);
+    text-align: center;
+}
+
+.game-modal__icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 10px;
+    place-items: center;
+    border-radius: 50%;
+    background: #f4c96b;
+    color: #fff;
+    font-size: 1.8rem;
+}
+
+.game-modal__icon--retry {
+    background: #d89a63;
+}
+
+.game-modal__card h2 {
+    margin: 6px 0;
+    color: #31473d;
+}
+
+.game-modal__card p {
+    margin: 8px 0 18px;
+    color: #536459;
+}
+
+.game-modal__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.btn-secondary {
+    min-height: 48px;
+    border: 1px solid #bca878;
+    border-radius: 10px;
+    background: #f7eed7;
+    color: #4c5c52;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.game-loading {
+    align-content: center;
+    gap: 14px;
+    color: #fff;
+    text-align: center;
+}
+
+.game-loading__spinner {
+    width: 44px;
+    height: 44px;
+    border: 5px solid rgb(255 255 255 / 35%);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: game-loading-spin 800ms linear infinite;
+}
+
+@keyframes game-loading-spin {
+    to { transform: rotate(360deg); }
 }
 
 .treasure-node--locked {
@@ -2704,8 +2947,8 @@ textarea:focus-visible {
 
 .profile-card,
 .levels-card {
-    border-color: rgb(201 171 115 / 75%);
-    box-shadow: 0 12px 30px rgb(46 35 20 / 10%);
+    border-color: rgb(26, 44, 44 / 75%);
+    box-shadow: 0 12px 30px rgb(26, 44, 44 / 10%);
 }
 
 .treasure-map {
@@ -2815,7 +3058,7 @@ textarea:focus-visible {
 
 .map-screen {
     position: relative;
-    width: min(100%, 1040px);
+    width: min(100%, 1180px);
     box-sizing: border-box;
     margin: 0 auto;
     padding: clamp(14px, 2.5vw, 26px);
@@ -3210,9 +3453,19 @@ textarea:focus-visible {
 
 @media (min-width: 761px) {
     .map-screen .treasure-route {
-        width: min(100%, 980px);
-        height: clamp(620px, 65vw, 740px);
-        max-width: 980px;
+        width: min(100%, 1120px);
+        height: clamp(560px, 52vw, 680px);
+        max-width: 1120px;
+    }
+
+    .map-screen .treasure-node {
+        width: clamp(76px, 7vw, 92px);
+        height: clamp(76px, 7vw, 92px);
+        border-radius: 22px;
+    }
+
+    .map-screen .treasure-node__number {
+        font-size: clamp(1.35rem, 2.2vw, 1.65rem);
     }
 
     .map-screen .treasure-route__trail--desktop {
