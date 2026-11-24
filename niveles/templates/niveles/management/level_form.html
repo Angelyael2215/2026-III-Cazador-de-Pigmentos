@@ -1,17 +1,20 @@
 {% extends "usuarios/base_admin.html" %}
+{% load static %}
 
 {% block content %}
 <section class="level-builder-page" aria-labelledby="level-builder-title">
     <header class="level-builder-page__heading">
         <p class="dashboard-eyebrow">Diseñador de retos</p>
         <h1 id="level-builder-title">{{ page_title }}</h1>
-        <p>Completa los datos básicos y el formulario mostrará los campos del tipo de reto elegido.</p>
+        <p>Elige el tipo de reto para ver su estructura JSON y usa la paleta para insertar colores sin escribir sus códigos.</p>
     </header>
 
     <form method="post" class="panel-form level-builder">
     {% csrf_token %}
         {{ form.non_field_errors }}
 
+        <div class="level-builder__workspace">
+        <div class="level-builder__editor">
         <section class="level-builder__basics" aria-labelledby="level-basics-title">
             <h2 id="level-basics-title">Información del nivel</h2>
             <div class="level-builder__grid">
@@ -59,9 +62,27 @@
             <fieldset class="level-builder__group" data-level-kinds="mix saturation">
                 <legend>Respuesta correcta</legend>
                 <div class="level-builder__field">
-                    {{ form.answer_colors.label_tag }}
-                    {{ form.answer_colors }}
-                    {{ form.answer_colors.errors }}
+                    <div data-mix-answer-entry>
+                        {{ form.answer_colors.label_tag }}
+                        {{ form.answer_colors }}
+                        {{ form.answer_colors.help_text }}
+                    </div>
+                    <section class="level-builder__mix-recipe" data-mix-recipe aria-labelledby="mix-recipe-title" hidden>
+                        <h3 id="mix-recipe-title">Arma la combinación correcta</h3>
+                        <p>
+                            Elige los pigmentos que el jugador debe combinar. Para obtener naranja,
+                            selecciona rojo + amarillo, no escribas el naranja.
+                        </p>
+                        <div class="level-builder__mix-ingredients" data-mix-ingredients role="group" aria-label="Pigmentos de la respuesta"></div>
+                        <div class="level-builder__mix-preview">
+                            <span class="level-builder__mix-swatch" data-mix-result-swatch aria-hidden="true"></span>
+                            <p data-mix-result-text role="status" aria-live="polite">
+                                Agrega colores disponibles para armar la combinación.
+                            </p>
+                        </div>
+                        <small>La vista previa del resultado es aproximada; la respuesta guardada son los pigmentos seleccionados.</small>
+                    </section>
+                    <div data-mix-answer-errors>{{ form.answer_colors.errors }}</div>
                 </div>
             </fieldset>
 
@@ -141,24 +162,32 @@
             <button class="btn" type="submit">Guardar nivel</button>
             <a class="btn btn-edit" href="{% url 'niveles_juego_lista' %}">Cancelar</a>
         </div>
+        </div>
+
+        <aside class="level-builder__sidebar" aria-label="Herramientas de diseño">
+            <section class="level-builder__palette" aria-labelledby="level-palette-title">
+                <h2 id="level-palette-title">Paleta de colores</h2>
+                <p>Haz clic en un color para agregarlo al campo que estés editando.</p>
+                <div class="level-builder__swatches" data-color-palette role="group" aria-label="Colores rápidos"></div>
+                <div class="level-builder__custom-color">
+                    <label for="custom-level-color">Elegir otro color</label>
+                    <input id="custom-level-color" type="color" value="#1E88E5" data-custom-level-color>
+                    <button class="btn btn-edit" type="button" data-add-custom-color>Agregar</button>
+                </div>
+                <p class="level-builder__color-status" data-color-status role="status" aria-live="polite">
+                    Se agregará a Colores disponibles.
+                </p>
+            </section>
+
+            <section class="level-builder__json-preview" aria-labelledby="level-json-preview-title">
+                <h2 id="level-json-preview-title">JSON automático</h2>
+                <p>Vista previa de la estructura que genera este tipo de reto.</p>
+                <pre data-level-json-preview aria-live="polite"></pre>
+            </section>
+        </aside>
+        </div>
     </form>
 </section>
 
-<script>
-    (function () {
-        const typeField = document.getElementById("id_kind");
-        const groups = document.querySelectorAll("[data-level-kinds]");
-        if (!typeField || !groups.length) return;
-
-        function updateGroups() {
-            groups.forEach(function (group) {
-                const kinds = group.dataset.levelKinds.split(/\s+/);
-                group.hidden = !kinds.includes(typeField.value);
-            });
-        }
-
-        typeField.addEventListener("change", updateGroups);
-        updateGroups();
-    }());
-</script>
+<script src="{% static 'niveles/level_builder.js' %}?v=2" defer></script>
 {% endblock %}

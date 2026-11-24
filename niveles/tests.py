@@ -532,14 +532,37 @@ class SeededGameLevelsTests(TestCase):
                 "kind": "mix",
                 "title": "Mezcla de prueba",
                 "instruction": "Combina pigmentos.",
-                "colors": "#112233\n#445566",
-                "answer_colors": "#778899",
+                "colors": "#FFEB3B\n#2196F3\n#F44336",
+                "answer_colors": "#FF5722",
                 "active": True,
             }
         )
 
         self.assertFalse(form.is_valid())
         self.assertIn("answer_colors", form.errors)
+        error = " ".join(form.errors["answer_colors"])
+        self.assertIn("#FF5722", error)
+        self.assertIn("#FFEB3B, #2196F3, #F44336", error)
+        self.assertIn("no son pigmentos", error)
+        self.assertIn("selecciona abajo los pigmentos que lo producen", error)
+
+        orange_form = LevelForm(
+            data={
+                "number": 27,
+                "kind": "mix",
+                "title": "Crear naranja",
+                "instruction": "Mezcla los pigmentos para obtener naranja.",
+                "colors": "#FFEB3B\n#2196F3\n#F44336",
+                "answer_colors": "#FFEB3B\n#F44336",
+                "active": True,
+            }
+        )
+
+        self.assertTrue(orange_form.is_valid(), orange_form.errors)
+        self.assertEqual(
+            orange_form.cleaned_data["solution"]["colors"],
+            ["#FFEB3B", "#F44336"],
+        )
 
     def test_seeded_levels_each_render_their_own_question_and_colors(self):
         player, _ = Player.objects.get_or_create(user=self.user)
@@ -658,6 +681,18 @@ class LevelManagementPanelTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Crear nivel")
+
+    def test_level_builder_shows_color_palette_and_json_preview(self):
+        response = self.client.get("/gestion/niveles/juego/nuevo/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Paleta de colores")
+        self.assertContains(response, "JSON automático")
+        self.assertContains(response, "data-color-palette")
+        self.assertContains(response, "data-level-json-preview")
+        self.assertContains(response, "niveles/level_builder.js?v=2")
+        self.assertContains(response, "data-mix-recipe")
+        self.assertContains(response, "rojo + amarillo")
 
     def test_role_permissions_enable_only_granted_level_actions(self):
         reader = get_user_model().objects.create_user(
