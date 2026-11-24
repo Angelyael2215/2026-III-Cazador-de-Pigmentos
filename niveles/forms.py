@@ -16,7 +16,10 @@ class LevelForm(forms.ModelForm):
         label="Respuesta de colores",
         required=False,
         widget=forms.Textarea(attrs={"rows": 3, "placeholder": "#1E88E5"}),
-        help_text="Para mezclas, indica los pigmentos correctos; para saturación, el orden correcto.",
+        help_text=(
+            "Para mezclas, elige los pigmentos que forman el color final; no escribas el resultado. "
+            "Para saturación, ordénalos todos."
+        ),
     )
     warm_colors = forms.CharField(
         label="Colores cálidos",
@@ -357,12 +360,25 @@ class LevelForm(forms.ModelForm):
 
     def _validate_guided_configuration(self, kind, data, solution):
         if kind == "mix":
-            available = set(data.get("colors", []))
-            answer = set(solution.get("colors", []))
-            if not answer or not answer.issubset(available):
+            available_colors = data.get("colors", [])
+            answer_colors = solution.get("colors", [])
+            available = set(available_colors)
+            answer = set(answer_colors)
+            if answer and not available:
                 self.add_error(
                     "answer_colors",
-                    "La respuesta debe usar pigmentos disponibles en la prueba.",
+                    "Agrega primero los colores de la prueba y luego elige la respuesta entre ellos.",
+                )
+            elif answer and not answer.issubset(available):
+                unavailable = [
+                    color for color in answer_colors if color not in available
+                ]
+                self.add_error(
+                    "answer_colors",
+                    f"Estos valores no son pigmentos de «Colores disponibles»: "
+                    f"{', '.join(unavailable)}. Si son el color final que buscas, "
+                    "selecciona abajo los pigmentos que lo producen. "
+                    f"Pigmentos disponibles: {', '.join(available_colors)}.",
                 )
         elif kind == "temperature":
             available = set(data.get("colors", []))
@@ -551,4 +567,13 @@ class LevelForm(forms.ModelForm):
             (allow_subset and not expected_set.issubset(available_set))
             or (not allow_subset and expected_set != available_set)
         ):
+            if allow_subset and available_set:
+                unavailable = [
+                    color for color in expected_colors if color not in available_set
+                ]
+                solution_message = (
+                    f"Estos valores no son pigmentos de «Colores de la prueba»: "
+                    f"{', '.join(unavailable)}. Usa solo estos colores: "
+                    f"{', '.join(available_colors)}."
+                )
             self.add_error("solution", solution_message)
